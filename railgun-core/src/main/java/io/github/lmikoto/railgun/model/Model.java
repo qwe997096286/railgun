@@ -1,6 +1,7 @@
 package io.github.lmikoto.railgun.model;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.Map;
  * 2021/1/3 2:10 下午
  */
 @Data
+@EqualsAndHashCode(callSuper=false)
 public class Model extends BaseMappedProperty implements Serializable {
 
     /**

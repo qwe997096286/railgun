@@ -5,11 +5,16 @@ import com.intellij.ide.DataManager;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.actionSystem.PlatformDataKeys;
+import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.ui.AnActionButton;
 import com.intellij.ui.AnActionButtonRunnable;
+import io.github.lmikoto.railgun.configurable.CodeDir;
 import io.github.lmikoto.railgun.configurable.CodeGroup;
-import io.github.lmikoto.railgun.configurable.NameEditDialog;
+import io.github.lmikoto.railgun.configurable.CodeTemplate;
+import io.github.lmikoto.railgun.configurable.componet.NameEditDialog;
 import io.github.lmikoto.railgun.configurable.TemplateConfigurable;
 import io.github.lmikoto.railgun.utils.CollectionUtils;
 
@@ -52,17 +57,18 @@ public class TemplateAddAction extends BaseTemplateAction implements AnActionBut
         }
 
         Object object = selectedNode.getUserObject();
-        if (object instanceof CodeGroup) {
-            actions.add(groupAction);
-//            actions.add(groupAction);
-        }
-//        // 2. 如果选中的是group, 则可以新增root, group以及template
 //        if (object instanceof CodeGroup) {
-//            actions.add(rootAction);
 //            actions.add(groupAction);
-//            actions.add(templateAction);
 //        }
-//        // 3. 如果选中的是template, 则可以新增root, group以及template
+        // 2. 如果选中的是group, 则可以新增root, group以及template
+        if (object instanceof CodeGroup) {
+            CodeDirAddAction codeDirAddAction = new CodeDirAddAction(selectedNode);
+            actions.add(codeDirAddAction);
+        } else if (object instanceof CodeDir) {
+            CodeTemplateAddAction templateAction = new CodeTemplateAddAction(selectedNode);
+            actions.add(templateAction);
+        }
+        // 3. 如果选中的是template, 则可以新增root, group以及template
 //        if (object instanceof CodeTemplate) {
 //            actions.add(rootAction);
 //            actions.add(groupAction);
@@ -71,12 +77,17 @@ public class TemplateAddAction extends BaseTemplateAction implements AnActionBut
         return actions;
     }
 
-    class CodeGroupAddAction extends AnAction {
+    class CodeGroupAddAction extends AnAction implements DumbAware {
 
         public CodeGroupAddAction() {
             super("Code Group", null, AllIcons.Nodes.JavaModule);
         }
 
+        @Override
+        public void update(AnActionEvent e) {
+            setEnabledInModalContext(false);
+            e.getPresentation().setEnabled(true);
+        }
         @Override
         public void actionPerformed(AnActionEvent anActionEvent) {
             NameEditDialog dialog = new NameEditDialog();
@@ -88,6 +99,66 @@ public class TemplateAddAction extends BaseTemplateAction implements AnActionBut
 //                    return;
 //                }
                 addGroup(CodeGroup.fromName(name.trim()));
+                dialog.setVisible(false);
+            });
+            showDialog(dialog, 300, 150);
+        }
+    }
+    class CodeTemplateAddAction extends AnAction implements DumbAware {
+
+        private final DefaultMutableTreeNode selectedNode;
+
+        public CodeTemplateAddAction(DefaultMutableTreeNode selectedNode) {
+            super("Code Template", null, AllIcons.Nodes.JavaModule);
+            this.selectedNode = selectedNode;
+        }
+
+        @Override
+        public void update(AnActionEvent e) {
+            setEnabledInModalContext(false);
+            e.getPresentation().setEnabled(true);
+        }
+        @Override
+        public void actionPerformed(AnActionEvent anActionEvent) {
+            NameEditDialog dialog = new NameEditDialog();
+            dialog.setTitle("Create Code Template");
+            dialog.getButtonOK().addActionListener(e -> {
+                String name = dialog.getNameField().getText();
+//                if (StringUtils.isBlank(name)) {
+//                    showErrorBorder(dialog.getNameField(), true);
+//                    return;
+//                }
+                addTemplate(CodeTemplate.fromName(name.trim()), this.selectedNode);
+                dialog.setVisible(false);
+            });
+            showDialog(dialog, 300, 150);
+        }
+    }
+    class CodeDirAddAction extends AnAction implements DumbAware {
+
+        private final DefaultMutableTreeNode selectedNode;
+
+        public CodeDirAddAction(DefaultMutableTreeNode selectedNode) {
+            super("Code Dir", null, AllIcons.Nodes.JavaModule);
+            this.selectedNode = selectedNode;
+        }
+
+        @Override
+        public void update(AnActionEvent e) {
+            setEnabledInModalContext(false);
+            e.getPresentation().setEnabled(true);
+        }
+        @Override
+        public void actionPerformed(AnActionEvent anActionEvent) {
+            NameEditDialog dialog = new NameEditDialog();
+            dialog.setTitle("Create Code Dir");
+            dialog.getButtonOK().addActionListener(e -> {
+                String name = dialog.getNameField().getText();
+//                if (StringUtils.isBlank(name)) {
+//                    showErrorBorder(dialog.getNameField(), true);
+//                    return;
+//                }
+                addDir(CodeDir.fromName(name.trim()), selectedNode);
                 dialog.setVisible(false);
             });
             showDialog(dialog, 300, 150);
