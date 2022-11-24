@@ -96,4 +96,5 @@ public class BeanUtil {
     public static <T> T nullOr(T str,T def){
         return str == null ? def : str;
     }
+
 }

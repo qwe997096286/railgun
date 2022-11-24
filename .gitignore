@@ -4,3 +4,4 @@ build/
 railgun-generator/
 *.iml
 .sandbox/
+rebel.xml/

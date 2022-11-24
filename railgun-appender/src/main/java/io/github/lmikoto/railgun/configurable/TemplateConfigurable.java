@@ -25,11 +25,8 @@ import javax.swing.tree.*;
 import java.awt.*;
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author liuyang
@@ -81,6 +78,7 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
         action.setGroupList(groupByFile);
         ItemDeleteAction itemDeleteAction = new ItemDeleteAction(this);
         itemDeleteAction.setGroupList(groupByFile);
+        templateEditor = new TemplateEditor();
         toolbarDecorator = ToolbarDecorator.createDecorator(templateTree)
                 .setAddAction(action)
                 .setRemoveAction(itemDeleteAction);
@@ -95,7 +93,6 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
             Object object = node.getUserObject();
             if(object instanceof CodeTemplate) {
                 templateEditor.getContentPanel().setVisible(true);
-//                templateEditor.refresh(template);
             } else {
                 templateEditor.getContentPanel().setVisible(false);
             }
@@ -105,7 +102,6 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
 
         JPanel templatesPanel = toolbarDecorator.createPanel();
         templatesPanel.setPreferredSize(JBUI.size(240,100));
-        templateEditor = constructEditor();
         jSplitPane = new JSplitPane();
         jSplitPane.setDividerLocation(240);
         jSplitPane.setOrientation(JSplitPane.HORIZONTAL_SPLIT);
@@ -169,19 +165,6 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
         return Lists.newArrayList();
     }
 
-    private TemplateEditor constructEditor() {
-        JTextArea templateInput = new JTextArea("模版");
-        TemplateEditor editor = new TemplateEditor();
-        JPanel jPanel = new JPanel();
-        jPanel.setLayout(new BorderLayout());
-        templateInput.setBackground(Color.LIGHT_GRAY);
-        editor.setLayout(new BorderLayout());
-        editor.setTextArea(templateInput);
-        editor.setContentPanel(jPanel);
-        editor.add(jPanel, BorderLayout.CENTER);
-        editor.getContentPanel().add(templateInput, BorderLayout.CENTER);
-        return editor;
-    }
 
     @Override
     public boolean isModified() {

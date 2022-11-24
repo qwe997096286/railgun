@@ -1,6 +1,5 @@
 package io.github.lmikoto.railgun.model;
 
-import io.github.lmikoto.railgun.utils.StringUtils;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -24,12 +23,10 @@ public class Table extends Model {
     @Override
     public void setName(String name) {
         super.setName(name);
-        this.table = StringUtils.camelToUnderline(name);
     }
 
 
     public void setTable(String table) {
         this.table = table;
-        super.setName(StringUtils.underlineToCamel(table, true));
     }
 }
