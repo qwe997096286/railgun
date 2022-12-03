@@ -1,4 +1,4 @@
-package io.github.lmikoto.railgun.configurable;
+package io.github.lmikoto.railgun.entity;
 
 import lombok.Data;
 
@@ -14,7 +14,6 @@ public class CodeDir implements Serializable {
 
     private static final long serialVersionUID = 213432213123213214L;
     private String name;
-
     private List<CodeTemplate> templates;
 
     public static CodeDir fromName(String name) {

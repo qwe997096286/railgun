@@ -3,16 +3,20 @@ package io.github.lmikoto.railgun.sql;
 import com.google.common.base.Throwables;
 import io.github.lmikoto.railgun.model.Field;
 import io.github.lmikoto.railgun.model.Table;
+import io.github.lmikoto.railgun.utils.CollectionUtils;
 import io.github.lmikoto.railgun.utils.StringUtils;
-import jdk.nashorn.internal.runtime.logging.Logger;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.comment.Comment;
 import net.sf.jsqlparser.statement.create.table.ColDataType;
 import net.sf.jsqlparser.statement.create.table.CreateTable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class DefaultParser extends AbstractParser {
@@ -38,18 +42,36 @@ public class DefaultParser extends AbstractParser {
             if (createTables.isEmpty()) {
                 throw new RuntimeException("Only support create table statement !!!");
             }
-
+            Map<String, String> fullName2Comment = statements.stream().filter(statement -> statement
+                    instanceof Comment).map(statement -> (Comment) statement).collect(Collectors
+                    .toMap((Comment comment) -> {
+                if (Objects.nonNull(comment.getTable())) {
+                    return comment.getTable().getFullyQualifiedName().toUpperCase();
+                } else if (Objects.nonNull(comment.getColumn())) {
+                    return comment.getColumn().getFullyQualifiedName().toUpperCase();
+                } else if (Objects.nonNull(comment.getView())) {
+                    return comment.getView().getFullyQualifiedName().toUpperCase();
+                }
+                return null;
+            }, comment -> removeQuotes(comment.getComment().toString())));
             for(CreateTable createTable: createTables) {
                 List<Field> fields = new ArrayList<>();
                 Table table = new Table(fields);
                 net.sf.jsqlparser.schema.Table tableScheme = createTable.getTable();
                 table.setName(removeQuotes(tableScheme.getName()));
-                List<String> strList = createTable.getTableOptionsStrings();
-                for (int i = 0 ; i < strList.size() - 2 ; i++) {
-                    if ("COMMENT".equals(strList.get(i)) && "=".equals(strList.get(i + 1))) {
-                        table.setTable(removeQuotes(strList.get(i + 2)));
-                        break;
+                String tableFullName;
+                if (fullName2Comment == null || fullName2Comment.isEmpty() ) {
+                    List<String> strList = createTable.getTableOptionsStrings();
+                    for (int i = 0 ; i < strList.size() - 2 ; i++) {
+                        if ("COMMENT".equals(strList.get(i)) && "=".equals(strList.get(i + 1))) {
+                            table.setTable(removeQuotes(strList.get(i + 2)));
+                            break;
+                        }
                     }
+                    tableFullName = null;
+                } else {
+                    tableFullName = createTable.getTable().getFullyQualifiedName().toUpperCase();
+                    table.setTable(removeQuotes(fullName2Comment.get(tableFullName)));
                 }
                 createTable.getColumnDefinitions().forEach(it -> {
                     Field field = new Field();
@@ -63,10 +85,21 @@ public class DefaultParser extends AbstractParser {
                     // 同时设置了字段类型
                     field.setColumnType(colDataType.getDataType());
                     field.setColumnSize(firstOrNull(colDataType.getArgumentsStringList()));
-
                     // comment注释
-                    field.setComment(getColumnComment(it.getColumnSpecs()));
-
+                    if (StringUtils.isNotEmpty(tableFullName) && fullName2Comment.containsKey(tableFullName + "." + it.getColumnName().toUpperCase())) {
+                        field.setComment(fullName2Comment.get(tableFullName + "." + it.getColumnName().toUpperCase()));
+                    } else {
+                        field.setComment(getColumnComment(it.getColumnSpecs()));
+                    }
+                    List<String> columnSpecs = it.getColumnSpecs();
+                    if (CollectionUtils.isNotEmpty(columnSpecs)) {
+                        for (int i = 0 ; i < columnSpecs.size() - 1 ; i++) {
+                            if ("NOT".equalsIgnoreCase(columnSpecs.get(i)) && "NULL".equalsIgnoreCase(columnSpecs.get(i + 1))) {
+                                field.setNotNull(true);
+                                break;
+                            }
+                        }
+                    }
                     fields.add(field);
                 });
 

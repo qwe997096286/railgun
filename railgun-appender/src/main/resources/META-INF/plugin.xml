@@ -17,10 +17,13 @@
         <applicationConfigurable groupId="tools" id="railgun.appender" instance="io.github.lmikoto.railgun.configurable.TemplateConfigurable">
 <!--            <configurable id="railgun.appender.template" instance="io.github.lmikoto.railgun.configurable.TemplateConfigurable"/>-->
         </applicationConfigurable>
-
     </extensions>
 
     <actions>
+        <action id="renderSelectAction" class="io.github.lmikoto.railgun.action.RenderSelectAction"
+                text="renderSelectAction">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
     </actions>
 
 </idea-plugin>

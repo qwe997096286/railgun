@@ -1,10 +1,12 @@
-package io.github.lmikoto.railgun.configurable;
+package io.github.lmikoto.railgun.entity;
 
+import com.google.common.collect.Maps;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author liuyang
@@ -19,11 +21,12 @@ public class CodeGroup implements Serializable {
     private String name;
 
     private List<CodeDir> dirs;
-
-
+    private Map<String, Object> velocityContext = Maps.newHashMap();
+    private ConfigModel configModel;
     public static CodeGroup fromName(String name) {
         CodeGroup codeGroup = new CodeGroup();
         codeGroup.setName(name);
+        codeGroup.configModel = new ConfigModel();
         return codeGroup;
     }
 

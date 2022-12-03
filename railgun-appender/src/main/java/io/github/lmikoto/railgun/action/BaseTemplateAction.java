@@ -1,25 +1,22 @@
-package io.github.lmikoto.railgun.configurable.action;
+package io.github.lmikoto.railgun.action;
 
-import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.PlatformDataKeys;
-import com.intellij.openapi.editor.Editor;
+import com.google.common.collect.Lists;
 import com.intellij.ui.treeStructure.Tree;
-import io.github.lmikoto.railgun.configurable.CodeDir;
-import io.github.lmikoto.railgun.configurable.CodeGroup;
-import io.github.lmikoto.railgun.configurable.CodeTemplate;
 import io.github.lmikoto.railgun.configurable.TemplateConfigurable;
+import io.github.lmikoto.railgun.entity.CodeDir;
+import io.github.lmikoto.railgun.entity.CodeGroup;
+import io.github.lmikoto.railgun.entity.CodeTemplate;
 import io.github.lmikoto.railgun.utils.CollectionUtils;
+import io.github.lmikoto.railgun.utils.JsonUtils;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.compress.utils.Lists;
 
 import javax.swing.*;
 import javax.swing.tree.*;
 import java.awt.*;
 import java.io.File;
-import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.util.List;
 import java.util.Objects;
 
@@ -37,7 +34,7 @@ public abstract class BaseTemplateAction {
     private java.util.List<CodeGroup> groupList;
     public BaseTemplateAction(TemplateConfigurable configurable){
         templateTree = configurable.getTemplateTree();
-        groupList = Lists.newArrayList();
+        groupList = configurable.getCodeGroups();
     }
 
     protected DefaultMutableTreeNode getSelectedNode() {
@@ -87,7 +84,6 @@ public abstract class BaseTemplateAction {
     }
 
     protected void addTemplate(CodeTemplate codeTemplate, DefaultMutableTreeNode selectPath) {
-        Object userObject = selectPath.getUserObject();
         Object[] userObjectPath = selectPath.getUserObjectPath();
         CodeGroup codeGroup = groupList.get(groupList.indexOf(userObjectPath[1]));
         List<CodeDir> dirs = codeGroup.getDirs();
@@ -110,18 +106,21 @@ public abstract class BaseTemplateAction {
         Object userObject = parent.getUserObject();
         if (userObject instanceof CodeGroup) {
             CodeGroup codeGroup = (CodeGroup) userObject;
-            List<CodeDir> dirs = codeGroup.getDirs();
-            if (CollectionUtils.isNotEmpty(dirs)) {
-                dirs.remove(node.getUserObject());
-            }
+            groupList.remove(codeGroup);
         } else if (userObject instanceof CodeDir) {
             CodeDir codeDir = (CodeDir) userObject;
+            Object[] userObjectPath = node.getUserObjectPath();
+            CodeGroup codeGroup = groupList.get(groupList.indexOf(userObjectPath[1]));
+            List<CodeDir> dirs = codeGroup.getDirs();
+            dirs.remove(codeDir);
+        } else if (userObject instanceof CodeTemplate){
+            CodeTemplate template = (CodeTemplate) userObject;
+            Object[] userObjectPath = node.getUserObjectPath();
+            CodeGroup codeGroup = groupList.get(groupList.indexOf(userObjectPath[1]));
+            List<CodeDir> dirs = codeGroup.getDirs();
+            CodeDir codeDir = dirs.get(dirs.indexOf(userObjectPath[2]));
             List<CodeTemplate> templates = codeDir.getTemplates();
-            if (CollectionUtils.isNotEmpty(templates)) {
-                templates.remove(node.getUserObject());
-            }
-        } else {
-            groupList.remove(userObject);
+            templates.remove(template);
         }
         parent.remove(node);
         saveTree();
@@ -130,7 +129,7 @@ public abstract class BaseTemplateAction {
 
     protected boolean saveTree() {
         File dataFile = new File( "./saveData/auto_data.text");
-        ObjectOutputStream objectOutputStream = null;
+        FileWriter fileWriter = null;
         try {
             if (!dataFile.exists()) {
                 File dir = new File("./saveData/");
@@ -139,15 +138,15 @@ public abstract class BaseTemplateAction {
                 }
                 dataFile.createNewFile();
             }
-            objectOutputStream = new ObjectOutputStream(new FileOutputStream(dataFile));
-            objectOutputStream.writeObject(groupList);
+            fileWriter = new FileWriter(dataFile);
+            fileWriter.write(JsonUtils.toPrettyJson(groupList.get(0)));
             return true;
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
             try {
-                objectOutputStream.flush();
-                objectOutputStream.close();
+                fileWriter.flush();
+                fileWriter.close();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

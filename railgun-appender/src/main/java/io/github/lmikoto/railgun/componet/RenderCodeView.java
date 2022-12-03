@@ -1,11 +1,9 @@
-package io.github.lmikoto.railgun.configurable.componet;
+package io.github.lmikoto.railgun.componet;
 
 import com.google.common.collect.Lists;
-import io.github.lmikoto.railgun.Appender;
-import io.github.lmikoto.railgun.entity.SimpleClass;
+import io.github.lmikoto.railgun.dto.CodeRenderTabDto;
 
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.*;
 import java.util.List;
 
@@ -16,44 +14,34 @@ public class RenderCodeView extends JDialog {
     private JTextPane textPane1;
     private JScrollPane scrollPane;
     private JTabbedPane tabbedPane1;
-    private Appender appender;
-    private List<SimpleClass> clazzList;
+    private List<CodeRenderTabDto> tabDatas;
     private List<JScrollPane> scrollPaneList;
     private List<JTextPane> textPaneList;
     public RenderCodeView(String codes) {
         this();
         textPane1.setText(codes);
     }
-    public RenderCodeView(List<SimpleClass> classList) {
+    public RenderCodeView(List<CodeRenderTabDto> tabContent) {
         this();
-        textPane1.setText(appender.process(classList.get(0), null));
-        clazzList.addAll(classList);
-        this.scrollPaneList = Lists.newArrayListWithExpectedSize(classList.size());
+        textPane1.setText(tabContent.get(0).getTabContent());
+        tabDatas.addAll(tabContent);
+        this.scrollPaneList = Lists.newArrayListWithExpectedSize(tabContent.size());
         scrollPaneList.add(this.scrollPane);
         textPaneList.add(textPane1);
-        tabbedPane1.setTitleAt(0, classList.get(0).getSimpleName());
-        classList.remove(0);
-        for (SimpleClass curClass : classList) {
+        tabbedPane1.setTitleAt(0, tabContent.get(0).getTabName());
+        tabContent.remove(0);
+        for (CodeRenderTabDto curTab : tabContent) {
             JTextPane jTextPane = new JTextPane();
             JScrollPane jScrollPane = new JScrollPane();
             jScrollPane.getViewport().add(jTextPane);
-            tabbedPane1.add(curClass.getSimpleName(), jScrollPane);
+            tabbedPane1.add(curTab.getTabName(), jScrollPane);
+            jTextPane.setText(curTab.getTabContent());
             textPaneList.add(jTextPane);
             scrollPaneList.add(jScrollPane);
         }
-        tabbedPane1.addChangeListener(event -> {
-            JTabbedPane target = (JTabbedPane) event.getSource();
-            int tabPlacement = target.getTabPlacement();
-            if (textPaneList.get(tabPlacement).getText().length() > 10) {
-                return;
-            }
-            textPaneList.get(tabPlacement).setText(appender.process(clazzList.get(tabPlacement), null));
-            System.out.println(event);
-        });
     }
     public RenderCodeView() {
-        this.appender = new Appender();
-        this.clazzList = Lists.newArrayList();
+        this.tabDatas = Lists.newArrayList();
         this.textPaneList = Lists.newArrayList();
         setContentPane(contentPane);
         setModal(true);

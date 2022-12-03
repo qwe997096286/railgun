@@ -1,4 +1,4 @@
-package io.github.lmikoto.railgun.configurable.componet;
+package io.github.lmikoto.railgun.componet;
 
 import lombok.Getter;
 

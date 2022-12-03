@@ -1,22 +1,15 @@
-package io.github.lmikoto.railgun.configurable.action;
+package io.github.lmikoto.railgun.utils;
 
 import com.github.javaparser.ast.Modifier;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.intellij.ui.AnActionButton;
-import com.intellij.ui.AnActionButtonRunnable;
-import io.github.lmikoto.railgun.JavaUtils;
-import io.github.lmikoto.railgun.configurable.componet.RenderCodeView;
+import io.github.lmikoto.railgun.dao.DataCenter;
 import io.github.lmikoto.railgun.entity.SimpleAnnotation;
 import io.github.lmikoto.railgun.entity.SimpleClass;
 import io.github.lmikoto.railgun.entity.SimpleField;
 import io.github.lmikoto.railgun.entity.SimpleMethod;
 import io.github.lmikoto.railgun.model.Field;
 import io.github.lmikoto.railgun.model.Table;
-import io.github.lmikoto.railgun.utils.StringUtils;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
@@ -26,33 +19,13 @@ import java.util.Random;
 
 /**
  * @author jinwq
- * @Time 2022-11-24 14:01
- * */
-@Slf4j
-public class RenderClassesAction implements AnActionButtonRunnable {
-    @Setter
-    private List<Table> tables;
-    @Getter
-    private List<SimpleClass> clazz;
-    private static String entityPackage = "io.github.noonrain";
-    @Override
-    public void run(AnActionButton anActionButton) {
-        clazz = Lists.newArrayListWithExpectedSize(tables.size());
-        for (Table table : tables) {
-            SimpleClass po = getPOClass(table);
-            SimpleClass dto = getDTOClass(table);
-            clazz.add(po);
-            clazz.add(dto);
-        }
-        RenderCodeView renderCodeView = new RenderCodeView(clazz);
-        renderCodeView.setSize(800, 600);
-        renderCodeView.setVisible(true);
-        renderCodeView.setTitle("code generated");
-    }
-
-    private SimpleClass getDTOClass(Table table) {
+ * @Date 2022/12/2 10:41
+ */
+public class JavaConvertUtils {
+    public static SimpleClass getDTOClass(Table table) {
         SimpleClass simpleClass = new SimpleClass();
-        simpleClass.setName(entityPackage + "." + StringUtils.underlineToCamel(table.getName(),true) + "Dto");
+        simpleClass.setName(DataCenter.getConfigModel().getPackageName() + "." + StringUtils
+                .underlineToCamel(table.getName(),true) + "Dto");
         Random random = new Random();
         if (StringUtils.isNotEmpty(table.getTable())) {
             simpleClass.setComment(table.getTable());
@@ -82,33 +55,14 @@ public class RenderClassesAction implements AnActionButtonRunnable {
         simpleClass.setFields(fields);
 //            构造get、set方法
         List<SimpleMethod> methods = Lists.newArrayListWithExpectedSize(fields.size() * 2);
-        for (Field field : table.getFields()) {
-            SimpleMethod setMethod = new SimpleMethod();
-            setMethod.setName("set" + StringUtils.underlineToCamel(field.getName(), true));
-            String fieldType = field.getFieldType();
-            SimpleClass returnType = new SimpleClass();
-            returnType.setName(fieldType);
-            setMethod.setType(returnType);
-            setMethod.setLine(Lists.newArrayList("return this." +
-                    StringUtils.underlineToCamel(field.getName()) + ";"));
-            SimpleMethod getMethod = new SimpleMethod();
-            getMethod.setName("get" + StringUtils.underlineToCamel(field.getName(), true));
-            LinkedHashMap<String, SimpleClass> params = Maps.newLinkedHashMap();
-            params.put(StringUtils.underlineToCamel(field.getName()), returnType);
-            getMethod.setParams(params);
-            getMethod.setLine(Lists.newArrayList("this." + StringUtils.underlineToCamel(field.getName()) +
-                    "=" + StringUtils.underlineToCamel(field.getName()) + ";"));
-            methods.add(setMethod);
-            methods.add(getMethod);
-        }
         simpleClass.setMethods(methods);
         return simpleClass;
     }
 
     @NotNull
-    private static SimpleClass getPOClass(Table table) {
+    public static SimpleClass getPOClass(Table table) {
         SimpleClass simpleClass = new SimpleClass();
-        simpleClass.setName(entityPackage + "." + StringUtils.underlineToCamel(table.getName(),true));
+        simpleClass.setName(DataCenter.getConfigModel().getPackageName() + "." + StringUtils.underlineToCamel(table.getName(),true));
         SimpleAnnotation tableAnno = new SimpleAnnotation();
         tableAnno.setName("javax.persistence.Table");
         tableAnno.setExpr("@Table(name = \"" + table.getName().toUpperCase() + "\")");
@@ -146,30 +100,11 @@ public class RenderClassesAction implements AnActionButtonRunnable {
         simpleClass.setFields(fields);
 //            构造get、set方法
         List<SimpleMethod> methods = Lists.newArrayListWithExpectedSize(fields.size() * 2);
-//        for (Field field : table.getFields()) {
-//            SimpleMethod setMethod = new SimpleMethod();
-//            setMethod.setName("set" + StringUtils.underlineToCamel(field.getName(), true));
-//            String fieldType = field.getFieldType();
-//            SimpleClass returnType = new SimpleClass();
-//            returnType.setName(fieldType);
-//            setMethod.setType(returnType);
-//            setMethod.setLine(Lists.newArrayList("return this." +
-//                    StringUtils.underlineToCamel(field.getName()) + ";"));
-//            SimpleMethod getMethod = new SimpleMethod();
-//            getMethod.setName("get" + StringUtils.underlineToCamel(field.getName(), true));
-//            LinkedHashMap<String, SimpleClass> params = Maps.newLinkedHashMap();
-//            params.put(StringUtils.underlineToCamel(field.getName()), returnType);
-//            getMethod.setParams(params);
-//            getMethod.setLine(Lists.newArrayList("this." + StringUtils.underlineToCamel(field.getName()) +
-//                    "=" + StringUtils.underlineToCamel(field.getName()) + ";"));
-//            methods.add(setMethod);
-//            methods.add(getMethod);
-//        }
         simpleClass.setMethods(methods);
         return simpleClass;
     }
 
-    private static void setSerialImpl(SimpleClass simpleClass, LinkedHashMap<String, SimpleField> fields, Random random) {
+    public static void setSerialImpl(SimpleClass simpleClass, LinkedHashMap<String, SimpleField> fields, Random random) {
         //        设置序列化、序列号
         SimpleClass serializable = new SimpleClass();
         serializable.setName("java.io.Serializable");
@@ -182,7 +117,7 @@ public class RenderClassesAction implements AnActionButtonRunnable {
         long randomLong = random.nextLong();
         serialField.setExpr(randomLong + "L");
         serialField.setModifiers(Lists.newArrayList(Modifier.Keyword.PRIVATE, Modifier.Keyword.STATIC
-        , Modifier.Keyword.FINAL));
+                , Modifier.Keyword.FINAL));
         fields.put("serialVersionUID", serialField);
     }
 

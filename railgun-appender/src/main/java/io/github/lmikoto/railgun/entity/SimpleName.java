@@ -1,6 +1,6 @@
 package io.github.lmikoto.railgun.entity;
 
-import io.github.lmikoto.railgun.JavaUtils;
+import io.github.lmikoto.railgun.utils.JavaUtils;
 
 /**
  * @author liuyang

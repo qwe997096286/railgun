@@ -1,4 +1,4 @@
-package io.github.lmikoto.railgun.configurable;
+package io.github.lmikoto.railgun.entity;
 
 import lombok.Data;
 
@@ -13,10 +13,15 @@ public class CodeTemplate implements Serializable {
 
     private static final long serialVersionUID = 213432876213214L;
     private String name;
-
+    private String type;
+    private String content;
     public static CodeTemplate fromName(String name){
+        return CodeTemplate.fromName(name, "template");
+    }
+    public static CodeTemplate fromName(String name, String type){
         CodeTemplate codeTemplate = new CodeTemplate();
         codeTemplate.setName(name);
+        codeTemplate.setType(type);
         return codeTemplate;
     }
 

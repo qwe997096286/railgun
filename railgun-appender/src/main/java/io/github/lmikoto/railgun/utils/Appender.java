@@ -1,4 +1,4 @@
-package io.github.lmikoto.railgun;
+package io.github.lmikoto.railgun.utils;
 
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.*;
@@ -12,6 +12,8 @@ import io.github.lmikoto.railgun.entity.SimpleClass;
 import io.github.lmikoto.railgun.entity.SimpleField;
 import io.github.lmikoto.railgun.entity.SimpleMethod;
 import io.github.lmikoto.railgun.utils.CollectionUtils;
+import io.github.lmikoto.railgun.utils.JavaUtils;
+import io.github.lmikoto.railgun.utils.JsonUtils;
 import io.github.lmikoto.railgun.utils.StringUtils;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +40,7 @@ public class Appender {
             return declaration;
         });
 
-        buildPackage(unit,JavaUtils.getPackageName(model.getName()));
+        buildPackage(unit, JavaUtils.getPackageName(model.getName()));
 
         buildClass(type,model);
 
@@ -98,7 +100,7 @@ public class Appender {
                 }
             }
             if (StringUtils.isNotEmpty(fieldData.getComment())) {
-                fieldDeclaration.setBlockComment(fieldData.getComment());
+                fieldDeclaration.setBlockComment("*" + fieldData.getComment());
             }
             fieldDeclaration.setAnnotations(annoNodes);
             if (CollectionUtils.isNotEmpty(fieldData.getModifiers())) {
@@ -269,7 +271,9 @@ public class Appender {
     private void buildClass(TypeDeclaration<?> type, SimpleClass model) {
         if(Objects.isNull(type.getName()) || "empty".equals(type.getNameAsString())){
             type.setName(JavaUtils.getSimpleName(model.getName()));
-            type.setBlockComment(model.getComment());
+            if (StringUtils.isNotEmpty(model.getComment())) {
+                type.setBlockComment("*" + model.getComment());
+            }
             type.setModifiers(Modifier.Keyword.PUBLIC);
         }
     }

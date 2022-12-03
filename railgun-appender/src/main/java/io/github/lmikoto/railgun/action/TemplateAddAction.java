@@ -1,22 +1,24 @@
-package io.github.lmikoto.railgun.configurable.action;
+package io.github.lmikoto.railgun.action;
 
 import com.intellij.icons.AllIcons;
 import com.intellij.ide.DataManager;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
-import com.intellij.openapi.actionSystem.PlatformDataKeys;
-import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.DumbAware;
+import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.ui.AnActionButton;
 import com.intellij.ui.AnActionButtonRunnable;
-import io.github.lmikoto.railgun.configurable.CodeDir;
-import io.github.lmikoto.railgun.configurable.CodeGroup;
-import io.github.lmikoto.railgun.configurable.CodeTemplate;
-import io.github.lmikoto.railgun.configurable.componet.NameEditDialog;
+import io.github.lmikoto.railgun.componet.NameEditDialog;
 import io.github.lmikoto.railgun.configurable.TemplateConfigurable;
+import io.github.lmikoto.railgun.entity.CodeDir;
+import io.github.lmikoto.railgun.entity.CodeGroup;
+import io.github.lmikoto.railgun.entity.CodeTemplate;
+import io.github.lmikoto.railgun.entity.dict.TemplateDict;
 import io.github.lmikoto.railgun.utils.CollectionUtils;
+import io.github.lmikoto.railgun.utils.NotificationUtils;
+import io.github.lmikoto.railgun.utils.StringUtils;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import java.util.ArrayList;
@@ -48,8 +50,6 @@ public class TemplateAddAction extends BaseTemplateAction implements AnActionBut
     private List<AnAction> getMultipleActions(DefaultMutableTreeNode selectedNode) {
         List<AnAction> actions = new ArrayList<>();
         CodeGroupAddAction groupAction = new CodeGroupAddAction();
-//        CodeGroupAddAction groupAction = new CodeGroupAddAction();
-//        CodeTemplateAddAction templateAction = new CodeTemplateAddAction();
 
         if (selectedNode == null) {
             actions.add(groupAction);
@@ -57,23 +57,15 @@ public class TemplateAddAction extends BaseTemplateAction implements AnActionBut
         }
 
         Object object = selectedNode.getUserObject();
-//        if (object instanceof CodeGroup) {
-//            actions.add(groupAction);
-//        }
         // 2. 如果选中的是group, 则可以新增root, group以及template
         if (object instanceof CodeGroup) {
             CodeDirAddAction codeDirAddAction = new CodeDirAddAction(selectedNode);
             actions.add(codeDirAddAction);
         } else if (object instanceof CodeDir) {
-            CodeTemplateAddAction templateAction = new CodeTemplateAddAction(selectedNode);
+            CodeTemplateAddAction templateAction = new CodeTemplateAddAction(selectedNode, TemplateDict.SQL2CLASS);
             actions.add(templateAction);
         }
         // 3. 如果选中的是template, 则可以新增root, group以及template
-//        if (object instanceof CodeTemplate) {
-//            actions.add(rootAction);
-//            actions.add(groupAction);
-//            actions.add(templateAction);
-//        }
         return actions;
     }
 
@@ -107,10 +99,14 @@ public class TemplateAddAction extends BaseTemplateAction implements AnActionBut
     class CodeTemplateAddAction extends AnAction implements DumbAware {
 
         private final DefaultMutableTreeNode selectedNode;
-
-        public CodeTemplateAddAction(DefaultMutableTreeNode selectedNode) {
-            super("Code Template", null, AllIcons.Nodes.JavaModule);
+        private String type;
+        private ComboBox<String> types;
+        public CodeTemplateAddAction(DefaultMutableTreeNode selectedNode, String type) {
+            super("Code Template " + type, null, AllIcons.Nodes.JavaModule);
+            char c = Character.toUpperCase(type.charAt(0));
+            type = c + type.substring(1);
             this.selectedNode = selectedNode;
+            this.type = type;
         }
 
         @Override
@@ -122,13 +118,21 @@ public class TemplateAddAction extends BaseTemplateAction implements AnActionBut
         public void actionPerformed(AnActionEvent anActionEvent) {
             NameEditDialog dialog = new NameEditDialog();
             dialog.setTitle("Create Code Template");
+            ComboBox<String> types = new ComboBox<>();
+
+            types.addItem(TemplateDict.SQL2CLASS);
+            types.addItem(TemplateDict.SQL2CONFIG);
+            types.addItem(TemplateDict.ENTITY2CONFIG);
+            types.addItem(TemplateDict.ENTITY2SELECT);
+            dialog.getContentPane().add(types);
             dialog.getButtonOK().addActionListener(e -> {
                 String name = dialog.getNameField().getText();
-//                if (StringUtils.isBlank(name)) {
-//                    showErrorBorder(dialog.getNameField(), true);
-//                    return;
-//                }
-                addTemplate(CodeTemplate.fromName(name.trim()), this.selectedNode);
+                String typeSelect = (String) types.getSelectedItem();
+                if (StringUtils.isBlank(name) || StringUtils.isBlank(typeSelect)) {
+                    NotificationUtils.simpleNotify("请将信息填写完整");
+                    return;
+                }
+                addTemplate(CodeTemplate.fromName(name.trim(), typeSelect), this.selectedNode);
                 dialog.setVisible(false);
             });
             showDialog(dialog, 300, 150);

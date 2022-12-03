@@ -34,6 +34,13 @@ public class SimpleClass implements SimpleName {
 
     private String comment;
 
+    public SimpleClass() {
+    }
+
+    public SimpleClass(String name) {
+        this.name = name;
+    }
+
     public Set<String> getImports(){
         if(CollectionUtils.isEmpty(imports)){
             imports = new HashSet<>();

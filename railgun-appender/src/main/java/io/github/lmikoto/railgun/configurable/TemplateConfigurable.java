@@ -1,6 +1,5 @@
 package io.github.lmikoto.railgun.configurable;
 
-import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.options.Configurable;
@@ -11,9 +10,16 @@ import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.ui.JBUI;
-import io.github.lmikoto.railgun.configurable.action.ItemDeleteAction;
-import io.github.lmikoto.railgun.configurable.action.TemplateAddAction;
-import io.github.lmikoto.railgun.configurable.componet.TemplateEditor;
+import io.github.lmikoto.railgun.action.ItemDeleteAction;
+import io.github.lmikoto.railgun.action.RenderClassAction;
+import io.github.lmikoto.railgun.action.TemplateAddAction;
+import io.github.lmikoto.railgun.componet.TemplateEditor;
+import io.github.lmikoto.railgun.dao.CodeGroupDao;
+import io.github.lmikoto.railgun.dao.DataCenter;
+import io.github.lmikoto.railgun.entity.CodeDir;
+import io.github.lmikoto.railgun.entity.CodeGroup;
+import io.github.lmikoto.railgun.entity.CodeTemplate;
+import io.github.lmikoto.railgun.entity.dict.TemplateDict;
 import io.github.lmikoto.railgun.utils.CollectionUtils;
 import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
@@ -21,10 +27,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
+import javax.swing.event.TreeSelectionEvent;
 import javax.swing.tree.*;
 import java.awt.*;
-import java.io.*;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -43,7 +48,11 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
     private TemplateEditor templateEditor;
 
     private JSplitPane jSplitPane;
+    @Getter
+    private List<CodeGroup> codeGroups;
 
+    @Getter
+    private DataCenter dataCenter;
     @Override
     public @NlsContexts.ConfigurableName String getDisplayName() {
         return "模版配置";
@@ -56,7 +65,7 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
     }
 
     private void init() {
-        File dataFile = new File( "./saveData/auto_data.text");
+
 
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -68,36 +77,23 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
         templateTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         templateTree.setCellRenderer(new TemplateTreeCellRenderer());
         List<CodeGroup> groupByFile = null;
-        if (dataFile.exists()) {
-            groupByFile = getTreeByFile(dataFile);
+        groupByFile = Lists.newArrayList();
+        this.codeGroups = groupByFile;
+        CodeGroup group = CodeGroupDao.getGroup();
+        if (group != null) {
+            groupByFile.add(group);
             saveData2Tree(groupByFile, templateTree);
-        } else {
-            groupByFile = Lists.newArrayList();
         }
         TemplateAddAction action = new TemplateAddAction(this);
-        action.setGroupList(groupByFile);
         ItemDeleteAction itemDeleteAction = new ItemDeleteAction(this);
-        itemDeleteAction.setGroupList(groupByFile);
         templateEditor = new TemplateEditor();
         toolbarDecorator = ToolbarDecorator.createDecorator(templateTree)
                 .setAddAction(action)
                 .setRemoveAction(itemDeleteAction);
 //                .setRemoveAction(new TemplateRemoveAction(this))
 //                .setEditAction(new TemplateEditAction(this));
-
-        templateTree.addTreeSelectionListener( it -> {
-            DefaultMutableTreeNode node = (DefaultMutableTreeNode) templateTree.getLastSelectedPathComponent();
-            if (node == null) {
-                return;
-            }
-            Object object = node.getUserObject();
-            if(object instanceof CodeTemplate) {
-                templateEditor.getContentPanel().setVisible(true);
-            } else {
-                templateEditor.getContentPanel().setVisible(false);
-            }
-        });
-
+        dataCenter = new DataCenter();
+        templateTree.addTreeSelectionListener(this::valueChanged);
 
 
         JPanel templatesPanel = toolbarDecorator.createPanel();
@@ -143,27 +139,7 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
         this.templateTree.scrollPathToVisible(path);
         this.templateTree.updateUI();
     }
-    private java.util.List<CodeGroup> getTreeByFile(File dataFile) {
-        try {
-            ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(dataFile));
-            Object object = objectInputStream.readObject();
-            if (object instanceof java.util.List) {
-                java.util.List list = (java.util.List) object;
-                ArrayList<CodeGroup> codeGroupList = Lists.newArrayListWithExpectedSize(list.size());
-                list.forEach(obj -> {
-                    CodeGroup codeGroup = obj instanceof CodeGroup ? (CodeGroup) obj : null;
-                    if (Objects.nonNull(codeGroup)) {
-                        codeGroupList.add(codeGroup);
-                    }
-                });
-                return codeGroupList;
-            }
-        } catch (Exception e) {
-            logger.error(Throwables.getStackTraceAsString(e));
-        }
 
-        return Lists.newArrayList();
-    }
 
 
     @Override
@@ -174,6 +150,35 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
     @Override
     public void apply() throws ConfigurationException {
 
+    }
+
+    private void valueChanged(TreeSelectionEvent it) {
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) templateTree.getLastSelectedPathComponent();
+        if (node == null) {
+            return;
+        }
+        Object object = node.getUserObject();
+        Object[] userObjectPath = node.getUserObjectPath();
+        if (!DataCenter.getCurrentGroup().equals(userObjectPath[1])) {
+            this.dataCenter.setCodeGroup(codeGroups.get(codeGroups.indexOf(userObjectPath[1])));
+        }
+        if (object instanceof CodeTemplate) {
+            CodeTemplate codeTemplate = (CodeTemplate) object;
+            CodeGroup codeGroup = this.codeGroups.get(this.codeGroups.indexOf(userObjectPath[1]));
+            List<CodeDir> dirs = codeGroup.getDirs();
+            CodeDir codeDir = dirs.get(dirs.indexOf(userObjectPath[2]));
+            List<CodeTemplate> templates = codeDir.getTemplates();
+            if (Objects.isNull(templates)) {
+                templates = Lists.newArrayList();
+                codeDir.setTemplates(templates);
+            }
+            templateEditor.getContentPanel().setVisible(true);
+            templateEditor.getComboBox1().setSelectedItem(codeTemplate.getType());
+            templateEditor.getTextArea().setText(codeTemplate.getContent());
+            templateEditor.setCurrentTemplate(templates.get(templates.indexOf(codeTemplate)));
+        } else {
+            templateEditor.getContentPanel().setVisible(false);
+        }
     }
 
     public class TemplateTreeCellRenderer extends DefaultTreeCellRenderer {
@@ -208,6 +213,11 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
             else if (obj instanceof CodeTemplate) {
                 CodeTemplate node = (CodeTemplate) obj;
                 DefaultTreeCellRenderer tempCellRenderer = new DefaultTreeCellRenderer();
+                if (TemplateDict.TYPE_CONFIG.equals(node.getType())) {
+                    tempCellRenderer.setOpenIcon(AllIcons.General.Settings);
+                    tempCellRenderer.setClosedIcon(AllIcons.General.Settings);
+                    tempCellRenderer.setLeafIcon(AllIcons.General.Settings);
+                }
                 return tempCellRenderer.getTreeCellRendererComponent(tree, node.getName(), selected, expanded, true, row, hasFocus);
             } else {
                 String text = (String) obj;

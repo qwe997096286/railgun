@@ -1,4 +1,4 @@
-package io.github.lmikoto.railgun;
+package io.github.lmikoto.railgun.utils;
 
 /**
  * @author liuyang
