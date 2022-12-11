@@ -11,6 +11,9 @@ public class CodeRenderTabDto {
     private String tabName;
     private String tabContent;
 
+    public CodeRenderTabDto() {
+    }
+
     public CodeRenderTabDto(String tabName, String tabContent) {
         this.tabName = tabName;
         this.tabContent = tabContent;

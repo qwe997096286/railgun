@@ -1,8 +1,10 @@
 package io.github.lmikoto.railgun.action;
 
+import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.intellij.ui.treeStructure.Tree;
 import io.github.lmikoto.railgun.configurable.TemplateConfigurable;
+import io.github.lmikoto.railgun.dao.DataCenter;
 import io.github.lmikoto.railgun.entity.CodeDir;
 import io.github.lmikoto.railgun.entity.CodeGroup;
 import io.github.lmikoto.railgun.entity.CodeTemplate;
@@ -10,20 +12,26 @@ import io.github.lmikoto.railgun.utils.CollectionUtils;
 import io.github.lmikoto.railgun.utils.JsonUtils;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import javax.swing.tree.*;
 import java.awt.*;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @author liuyang
  * 2021/3/7 7:46 下午
  */
+@Slf4j
 public abstract class BaseTemplateAction {
 
 
@@ -65,6 +73,10 @@ public abstract class BaseTemplateAction {
 
     protected void addGroup(CodeGroup group) {
         DefaultMutableTreeNode treeRoot = (DefaultMutableTreeNode) this.templateTree.getModel().getRoot();
+        if (DataCenter.getCurrentGroup() == null) {
+            DataCenter dataCenter = new DataCenter();
+            dataCenter.setCodeGroup(group);
+        }
         this.groupList.add(group);
         addNode(treeRoot, new DefaultMutableTreeNode(group));
         saveTree();
@@ -139,6 +151,40 @@ public abstract class BaseTemplateAction {
                 dataFile.createNewFile();
             }
             fileWriter = new FileWriter(dataFile);
+            List<CodeDir> dirs = groupList.get(0).getDirs();
+            if (CollectionUtils.isNotEmpty(dirs)) {
+                List<CodeTemplate> templates = dirs.stream().map(CodeDir::getTemplates).filter(Objects::nonNull)
+                        .flatMap(List::stream).filter(template -> StringUtils.isNotBlank(template.getContent())).collect(Collectors.toList());
+                if (CollectionUtils.isNotEmpty(templates)) {
+                    templates.forEach(template -> {
+                        String path = null;
+                        if (StringUtils.isNotEmpty(template.getDir())) {
+                            path = template.getDir() + "/";
+                        } else {
+                            path = "saveData/";
+                        }
+                        File file = new File(path + template.getName());
+                        FileOutputStream fos = null;
+                        try {
+                            if (!file.exists()) {
+                                file.createNewFile();
+                            }
+                            fos = new FileOutputStream(file);
+                            fos.write(template.getContent().getBytes(StandardCharsets.UTF_8));
+                        } catch (IOException e) {
+                            log.error(Throwables.getStackTraceAsString(e));
+                        } finally {
+                            try {
+                                fos.flush();
+                                fos.close();
+                            } catch (IOException e) {
+                                log.error(Throwables.getStackTraceAsString(e));
+                            }
+                        }
+
+                    });
+                }
+            }
             fileWriter.write(JsonUtils.toPrettyJson(groupList.get(0)));
             return true;
         } catch (IOException e) {

@@ -31,10 +31,19 @@ public class RenderEntity2Select implements RenderCode {
             return;
         }
         TypeDeclaration<?> type = typeDeclaration.get();
-        List<ConstructorDeclaration> constructors = type.getConstructors();
+        List<ConstructorDeclaration> constructors = type.getConstructors().stream()
+                .filter( declar -> declar.getParameters().size() > 0)
+                .collect(Collectors.toList());
         List<String[]> declaration = constructors.stream().map(construct -> construct
                         .getDeclarationAsString(false, false))
                 .map(s -> new String[]{s}).collect(Collectors.toList());
+        if (declaration.size() < 1) {
+            NotificationUtils.simpleNotify("未找到能构造select的构造方法");
+            return;
+        } else if (declaration.size() == 1) {
+            ChooseDialog.showRenderSelect(constructors.get(0));
+            return;
+        }
         DefaultTableModel defaultTableModel = new DefaultTableModel(declaration.toArray(new String[][]{}), new String[]{"构造器"});
         ChooseDialog chooseDialog = new ChooseDialog(defaultTableModel, constructors);
         chooseDialog.setSize(800, 600);

@@ -13,6 +13,8 @@ public class NameEditDialog extends JDialog {
     private JLabel label;
     @Getter
     private JTextField nameField;
+    @Getter
+    private JPanel southPanel;
 
 
     public NameEditDialog() {

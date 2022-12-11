@@ -11,7 +11,7 @@ import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.ui.JBUI;
 import io.github.lmikoto.railgun.action.ItemDeleteAction;
-import io.github.lmikoto.railgun.action.RenderClassAction;
+import io.github.lmikoto.railgun.action.SaveGroupAction;
 import io.github.lmikoto.railgun.action.TemplateAddAction;
 import io.github.lmikoto.railgun.componet.TemplateEditor;
 import io.github.lmikoto.railgun.dao.CodeGroupDao;
@@ -19,9 +19,9 @@ import io.github.lmikoto.railgun.dao.DataCenter;
 import io.github.lmikoto.railgun.entity.CodeDir;
 import io.github.lmikoto.railgun.entity.CodeGroup;
 import io.github.lmikoto.railgun.entity.CodeTemplate;
-import io.github.lmikoto.railgun.entity.dict.TemplateDict;
 import io.github.lmikoto.railgun.utils.CollectionUtils;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,10 +89,12 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
         templateEditor = new TemplateEditor();
         toolbarDecorator = ToolbarDecorator.createDecorator(templateTree)
                 .setAddAction(action)
-                .setRemoveAction(itemDeleteAction);
+                .setRemoveAction(itemDeleteAction)
+                .setEditAction(new SaveGroupAction(this));
 //                .setRemoveAction(new TemplateRemoveAction(this))
 //                .setEditAction(new TemplateEditAction(this));
         dataCenter = new DataCenter();
+        dataCenter.setCodeGroup(group);
         templateTree.addTreeSelectionListener(this::valueChanged);
 
 
@@ -213,7 +215,7 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
             else if (obj instanceof CodeTemplate) {
                 CodeTemplate node = (CodeTemplate) obj;
                 DefaultTreeCellRenderer tempCellRenderer = new DefaultTreeCellRenderer();
-                if (TemplateDict.TYPE_CONFIG.equals(node.getType())) {
+                if (StringUtils.isNoneBlank(node.getType()) && node.getType().contains("config")) {
                     tempCellRenderer.setOpenIcon(AllIcons.General.Settings);
                     tempCellRenderer.setClosedIcon(AllIcons.General.Settings);
                     tempCellRenderer.setLeafIcon(AllIcons.General.Settings);

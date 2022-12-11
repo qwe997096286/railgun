@@ -57,24 +57,27 @@ public class ChooseDialog extends JDialog {
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
     }
 
-    private void onOK() {
+    public void onOK() {
         // add your code here
         int selectedRow = table1.getSelectedRow();
         if (selectedRow == -1) {
             NotificationUtils.simpleNotify("未选择要使用的构造器");
             return;
         }
-        ConstructorDeclaration constructors = conList.get(selectedRow);
+        showRenderSelect(conList.get(selectedRow));
+        dispose();
+    }
+
+    public static void showRenderSelect(ConstructorDeclaration constructors) {
         String selectBody = constructors.getParameters().stream().map(param -> "tempTable." +
                 StringUtils.camelToUnderline(param.getNameAsString())).collect(Collectors.joining(","));
         StringBuilder select = new StringBuilder("sql.append(\"select ");
-        String s = select.append(selectBody).append("\")").toString();
+        String s = select.append(selectBody).append(" from tempTable\")").toString();
         CodeRenderTabDto selectTabDto = new CodeRenderTabDto("select sql", s);
         RenderCodeView renderCodeView = new RenderCodeView(Lists.newArrayList(selectTabDto));
         renderCodeView.setSize(800, 600);
         renderCodeView.setVisible(true);
         renderCodeView.setTitle("select sql");
-        dispose();
     }
 
     private void onCancel() {

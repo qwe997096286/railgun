@@ -10,6 +10,7 @@ import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.ui.AnActionButton;
 import com.intellij.ui.AnActionButtonRunnable;
+import com.intellij.uiDesigner.core.GridConstraints;
 import io.github.lmikoto.railgun.componet.NameEditDialog;
 import io.github.lmikoto.railgun.configurable.TemplateConfigurable;
 import io.github.lmikoto.railgun.entity.CodeDir;
@@ -102,7 +103,7 @@ public class TemplateAddAction extends BaseTemplateAction implements AnActionBut
         private String type;
         private ComboBox<String> types;
         public CodeTemplateAddAction(DefaultMutableTreeNode selectedNode, String type) {
-            super("Code Template " + type, null, AllIcons.Nodes.JavaModule);
+            super("Code Template ", null, AllIcons.Nodes.JavaModule);
             char c = Character.toUpperCase(type.charAt(0));
             type = c + type.substring(1);
             this.selectedNode = selectedNode;
@@ -124,7 +125,10 @@ public class TemplateAddAction extends BaseTemplateAction implements AnActionBut
             types.addItem(TemplateDict.SQL2CONFIG);
             types.addItem(TemplateDict.ENTITY2CONFIG);
             types.addItem(TemplateDict.ENTITY2SELECT);
-            dialog.getContentPane().add(types);
+            types.addItem(TemplateDict.VM2FILE);
+            GridConstraints gridConstraints = new GridConstraints();
+            gridConstraints.setAnchor(GridConstraints.ANCHOR_SOUTHWEST);
+            dialog.getSouthPanel().add(types, gridConstraints);
             dialog.getButtonOK().addActionListener(e -> {
                 String name = dialog.getNameField().getText();
                 String typeSelect = (String) types.getSelectedItem();
@@ -135,7 +139,7 @@ public class TemplateAddAction extends BaseTemplateAction implements AnActionBut
                 addTemplate(CodeTemplate.fromName(name.trim(), typeSelect), this.selectedNode);
                 dialog.setVisible(false);
             });
-            showDialog(dialog, 300, 150);
+            showDialog(dialog, 400, 150);
         }
     }
     class CodeDirAddAction extends AnAction implements DumbAware {

@@ -24,6 +24,7 @@ public class RenderSql2Config implements RenderCode {
     private DefaultParser parser;
     @Override
     public void execute(String sql) {
+        this.parser = new DefaultParser();
         java.util.List<Table> tables = parser.parseSQLs(sql);
         this.tables = tables;
         for (Table table : this.tables) {

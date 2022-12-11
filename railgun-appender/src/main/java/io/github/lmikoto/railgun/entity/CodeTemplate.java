@@ -1,5 +1,6 @@
 package io.github.lmikoto.railgun.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -14,7 +15,9 @@ public class CodeTemplate implements Serializable {
     private static final long serialVersionUID = 213432876213214L;
     private String name;
     private String type;
+    @JsonIgnore
     private String content;
+    private String dir;
     public static CodeTemplate fromName(String name){
         return CodeTemplate.fromName(name, "template");
     }
