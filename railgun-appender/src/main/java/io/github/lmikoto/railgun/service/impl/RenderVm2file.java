@@ -31,9 +31,16 @@ public class RenderVm2file implements RenderCode, SetCurTemplate
     private CodeTemplate curTemplate;
     @Override
     public void execute(String text) {
-        File file = new File(curTemplate.getName());
+        File file = new File("temp_template/" + curTemplate.getName());
         FileOutputStream fileStream = null;
         try {
+            if (!file.exists()) {
+                File dir = file.getParentFile();
+                if (!dir.exists()) {
+                    dir.mkdir();
+                }
+                file.createNewFile();
+            }
             fileStream = new FileOutputStream(file);
             fileStream.write(text.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
@@ -54,10 +61,12 @@ public class RenderVm2file implements RenderCode, SetCurTemplate
         velocityEngine.setProperty("resource.loader", "file");
         //设置velocity资源加载方式为file时的处理类
         velocityEngine.setProperty("file.resource.loader.class","org.apache.velocity.runtime.resource.loader.FileResourceLoader");
+        String absolutePath = file.getAbsolutePath();
+        velocityEngine.setProperty("file.resource.loader.path", absolutePath.substring(0, absolutePath.lastIndexOf('/')));
         velocityEngine.setProperty("input.encoding", "UTF-8");
         velocityEngine.setProperty("output.encoding", "UTF-8");
         velocityEngine.init();
-        Template template = velocityEngine.getTemplate(file.getAbsoluteFile().getAbsolutePath(), "UTF-8");
+        Template template = velocityEngine.getTemplate(curTemplate.getName(), "UTF-8");
         StringWriter sw = new StringWriter();
         template.merge(new VelocityContext(DataCenter.getCurrentGroup().getVelocityContext()), sw);
         StringBuffer buffer = sw.getBuffer();

@@ -1,5 +1,6 @@
 package io.github.lmikoto.railgun.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.Maps;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,6 +22,7 @@ public class CodeGroup implements Serializable {
     private String name;
 
     private List<CodeDir> dirs;
+    @JsonIgnore
     private Map<String, Object> velocityContext = Maps.newHashMap();
     private ConfigModel configModel;
     public static CodeGroup fromName(String name) {

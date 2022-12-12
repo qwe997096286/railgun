@@ -10,11 +10,14 @@ import io.github.lmikoto.railgun.service.impl.RenderEntity2Select;
 import io.github.lmikoto.railgun.service.impl.RenderSql2Class;
 import io.github.lmikoto.railgun.service.impl.RenderSql2Config;
 import io.github.lmikoto.railgun.service.impl.RenderVm2file;
+import io.github.lmikoto.railgun.utils.NotificationUtils;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.Map;
@@ -25,15 +28,16 @@ import java.util.Map;
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class TemplateEditor extends JPanel {
+public class TemplateEditor extends JPanel implements ComponentListener {
     private JPanel contentPanel;
     private JTextArea textArea;
     private JButton render;
     private JComboBox<String> comboBox1;
+    private JScrollPane scroll;
     private Map<String,RenderCode> renderActionMap;
     private CodeTemplate currentTemplate;
     public TemplateEditor() {
-        this.renderActionMap = Maps.newHashMapWithExpectedSize(3);
+        this.renderActionMap = Maps.newHashMapWithExpectedSize(4);
         java.util.List<RenderCode> renderCodes = Lists.newArrayList(new RenderSql2Class(), new RenderSql2Config(),
                 new RenderEntity2Select(), new RenderVm2file());
         renderCodes.forEach(renderCode -> {
@@ -53,15 +57,18 @@ public class TemplateEditor extends JPanel {
         this.comboBox1.addItem(TemplateDict.ENTITY2SELECT);
         this.comboBox1.addItem(TemplateDict.VM2FILE);
         this.comboBox1.addActionListener(l -> {
-            System.out.println(l.getActionCommand());
+            if (currentTemplate != null) {
+                currentTemplate.setType(comboBox1.getSelectedItem().toString());
+            }
         });
         render.addActionListener(actionEvent -> {
             String text = textArea.getText();
-            RenderCode renderCode = renderActionMap.get(currentTemplate.getType());
+            RenderCode renderCode = renderActionMap.get(comboBox1.getSelectedItem());
             if (renderCode instanceof SetCurTemplate) {
                 ((SetCurTemplate) renderCode).setTemplate(this.currentTemplate);
             }
             renderCode.execute(text);
+            NotificationUtils.simpleNotify("模版已处理完成。");
         });
         //模型数据绑定
         this.textArea.addKeyListener(new KeyListener() {
@@ -95,5 +102,26 @@ public class TemplateEditor extends JPanel {
     public void setCurrentTemplate(CodeTemplate currentTemplate) {
         this.textArea.setText(currentTemplate.getContent());
         this.currentTemplate = currentTemplate;
+    }
+
+    @Override
+    public void componentResized(ComponentEvent e) {
+        Container parent = TemplateEditor.this.getParent();
+        TemplateEditor.this.scroll.setPreferredSize(new Dimension(TemplateEditor.this.getWidth() - 50, parent.getHeight() - 50));
+    }
+
+    @Override
+    public void componentMoved(ComponentEvent e) {
+
+    }
+
+    @Override
+    public void componentShown(ComponentEvent e) {
+
+    }
+
+    @Override
+    public void componentHidden(ComponentEvent e) {
+
     }
 }

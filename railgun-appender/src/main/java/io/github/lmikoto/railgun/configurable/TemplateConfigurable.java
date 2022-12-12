@@ -42,15 +42,11 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
     private final static Logger logger = LoggerFactory.getLogger(TemplateConfigurable.class);
     @Getter
     private Tree templateTree;
-
     private ToolbarDecorator toolbarDecorator;
-
     private TemplateEditor templateEditor;
-
     private JSplitPane jSplitPane;
     @Getter
     private List<CodeGroup> codeGroups;
-
     @Getter
     private DataCenter dataCenter;
     @Override
@@ -108,6 +104,7 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
         jSplitPane.setLeftComponent(templatesPanel);
         jSplitPane.setRightComponent(templateEditor);
         add(jSplitPane, BorderLayout.CENTER);
+        this.addComponentListener(templateEditor);
         GuiUtils.replaceJSplitPaneWithIDEASplitter(this);
 
     }

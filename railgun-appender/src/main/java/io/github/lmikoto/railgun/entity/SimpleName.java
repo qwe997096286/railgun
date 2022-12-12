@@ -1,5 +1,6 @@
 package io.github.lmikoto.railgun.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.github.lmikoto.railgun.utils.JavaUtils;
 
 /**
@@ -18,6 +19,7 @@ public interface SimpleName {
      * simple name
      * @return
      */
+    @JsonIgnore
     default String getSimpleName(){
         return JavaUtils.getSimpleName(getName());
     }

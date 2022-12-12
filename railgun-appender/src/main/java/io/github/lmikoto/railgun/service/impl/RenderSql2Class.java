@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.lmikoto.railgun.entity.dict.TemplateDict;
 import io.github.lmikoto.railgun.utils.Appender;
+import io.github.lmikoto.railgun.utils.JavaConvertUtils;
 import io.github.lmikoto.railgun.utils.JavaUtils;
 import io.github.lmikoto.railgun.componet.RenderCodeView;
 import io.github.lmikoto.railgun.dao.DataCenter;
@@ -36,14 +37,15 @@ public class RenderSql2Class implements RenderCode {
 
     public RenderSql2Class() {
         this.appender = new Appender();
+        this.parser = new DefaultParser();
     }
 
     public void run() {
         this.parser = new DefaultParser();
         List<CodeRenderTabDto> tabDtos = Lists.newArrayListWithExpectedSize(tables.size() * 3);
         for (Table table : tables) {
-            SimpleClass po = getPOClass(table);
-            SimpleClass dto = getDTOClass(table);
+            SimpleClass po = JavaConvertUtils.getPOClass(table);
+            SimpleClass dto = JavaConvertUtils.getDTOClass(table);
             String poClass = appender.process(po, null);
             String dtoClass = appender.process(dto, null);
             String doc = generateDoc(table);
@@ -65,7 +67,7 @@ public class RenderSql2Class implements RenderCode {
 
     @Override
     public String getRenderType() {
-        return TemplateDict.SQL2CONFIG;
+        return TemplateDict.SQL2CLASS;
     }
 
     public void populateEntity(String sql) {
