@@ -20,7 +20,7 @@ public class DataCenter {
         if (codeGroup != null ) {
             return codeGroup.getConfigModel();
         }
-        return new ConfigModel();
+        return null;
     }
 
     public void setCodeGroup(CodeGroup codeGroup) {

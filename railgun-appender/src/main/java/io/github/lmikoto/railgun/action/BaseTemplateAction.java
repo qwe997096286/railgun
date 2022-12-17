@@ -115,7 +115,7 @@ public abstract class BaseTemplateAction {
             return;
         }
         DefaultMutableTreeNode parent =(DefaultMutableTreeNode) node.getParent();
-        Object userObject = parent.getUserObject();
+        Object userObject = node.getUserObject();
         if (userObject instanceof CodeGroup) {
             CodeGroup codeGroup = (CodeGroup) userObject;
             groupList.remove(codeGroup);
@@ -135,6 +135,7 @@ public abstract class BaseTemplateAction {
             templates.remove(template);
         }
         parent.remove(node);
+        updateUI();
         saveTree();
     }
 

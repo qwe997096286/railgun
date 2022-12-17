@@ -1,6 +1,7 @@
 package io.github.lmikoto.railgun.configurable;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
@@ -13,12 +14,19 @@ import com.intellij.util.ui.JBUI;
 import io.github.lmikoto.railgun.action.ItemDeleteAction;
 import io.github.lmikoto.railgun.action.SaveGroupAction;
 import io.github.lmikoto.railgun.action.TemplateAddAction;
+import io.github.lmikoto.railgun.componet.GroupConfigPane;
+import io.github.lmikoto.railgun.componet.ITabbedPane;
 import io.github.lmikoto.railgun.componet.TemplateEditor;
 import io.github.lmikoto.railgun.dao.CodeGroupDao;
 import io.github.lmikoto.railgun.dao.DataCenter;
 import io.github.lmikoto.railgun.entity.CodeDir;
 import io.github.lmikoto.railgun.entity.CodeGroup;
 import io.github.lmikoto.railgun.entity.CodeTemplate;
+import io.github.lmikoto.railgun.service.RenderCode;
+import io.github.lmikoto.railgun.service.impl.RenderEntity2Select;
+import io.github.lmikoto.railgun.service.impl.RenderSql2Class;
+import io.github.lmikoto.railgun.service.impl.RenderSql2Config;
+import io.github.lmikoto.railgun.service.impl.RenderVm2file;
 import io.github.lmikoto.railgun.utils.CollectionUtils;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
@@ -31,6 +39,7 @@ import javax.swing.event.TreeSelectionEvent;
 import javax.swing.tree.*;
 import java.awt.*;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -44,11 +53,14 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
     private Tree templateTree;
     private ToolbarDecorator toolbarDecorator;
     private TemplateEditor templateEditor;
+    private GroupConfigPane groupConfigPane;
     private JSplitPane jSplitPane;
     @Getter
     private List<CodeGroup> codeGroups;
     @Getter
     private DataCenter dataCenter;
+    private ITabbedPane jPanel;
+
     @Override
     public @NlsContexts.ConfigurableName String getDisplayName() {
         return "模版配置";
@@ -82,7 +94,9 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
         }
         TemplateAddAction action = new TemplateAddAction(this);
         ItemDeleteAction itemDeleteAction = new ItemDeleteAction(this);
+        Map<String, RenderCode> renderCodes = createRenderCode();
         templateEditor = new TemplateEditor();
+        templateEditor.setRenderActionMap(renderCodes);
         toolbarDecorator = ToolbarDecorator.createDecorator(templateTree)
                 .setAddAction(action)
                 .setRemoveAction(itemDeleteAction)
@@ -93,7 +107,8 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
         dataCenter.setCodeGroup(group);
         templateTree.addTreeSelectionListener(this::valueChanged);
 
-
+        //设置group配置面版
+        groupConfigPane = new GroupConfigPane();
         JPanel templatesPanel = toolbarDecorator.createPanel();
         templatesPanel.setPreferredSize(JBUI.size(240,100));
         jSplitPane = new JSplitPane();
@@ -102,11 +117,27 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
         jSplitPane.setContinuousLayout(true);
         jSplitPane.setBorder(BorderFactory.createEmptyBorder());
         jSplitPane.setLeftComponent(templatesPanel);
-        jSplitPane.setRightComponent(templateEditor);
+        // 配置面板右侧
+        jPanel = new ITabbedPane();
+        jPanel.add("code group", groupConfigPane);
+        jPanel.add("code template", templateEditor);
+        jPanel.setVisible(true);
+        jSplitPane.setRightComponent(jPanel);
         add(jSplitPane, BorderLayout.CENTER);
-        this.addComponentListener(templateEditor);
+        this.addComponentListener(jPanel);
+        templatesPanel.addComponentListener(jPanel);
         GuiUtils.replaceJSplitPaneWithIDEASplitter(this);
 
+    }
+
+    private Map<String, RenderCode> createRenderCode() {
+        Map<String, RenderCode> renderActionMap = Maps.newHashMapWithExpectedSize(4);
+        java.util.List<RenderCode> renderCodes = Lists.newArrayList(new RenderSql2Class(), new RenderSql2Config(),
+                new RenderEntity2Select(), new RenderVm2file());
+        renderCodes.forEach(renderCode -> {
+            renderActionMap.put(renderCode.getRenderType(), renderCode);
+        });
+        return renderActionMap;
     }
 
     private void saveData2Tree(List<CodeGroup> groupByFile, Tree templateTree) {
@@ -162,6 +193,7 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
             this.dataCenter.setCodeGroup(codeGroups.get(codeGroups.indexOf(userObjectPath[1])));
         }
         if (object instanceof CodeTemplate) {
+
             CodeTemplate codeTemplate = (CodeTemplate) object;
             CodeGroup codeGroup = this.codeGroups.get(this.codeGroups.indexOf(userObjectPath[1]));
             List<CodeDir> dirs = codeGroup.getDirs();
@@ -171,12 +203,16 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
                 templates = Lists.newArrayList();
                 codeDir.setTemplates(templates);
             }
-            templateEditor.getContentPanel().setVisible(true);
+            templateEditor.setCurrentTemplate(templates.get(templates.indexOf(codeTemplate)));
             templateEditor.getComboBox1().setSelectedItem(codeTemplate.getType());
             templateEditor.getTextArea().setText(codeTemplate.getContent());
-            templateEditor.setCurrentTemplate(templates.get(templates.indexOf(codeTemplate)));
+            jPanel.setVisible(true);
+            jPanel.setSelectedComponent(templateEditor);
+        } else if (object instanceof CodeGroup) {
+            jPanel.setVisible(true);
+            jPanel.setSelectedComponent(groupConfigPane);
         } else {
-            templateEditor.getContentPanel().setVisible(false);
+            jPanel.setVisible(false);
         }
     }
 

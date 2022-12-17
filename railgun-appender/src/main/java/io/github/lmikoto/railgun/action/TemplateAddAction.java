@@ -13,17 +13,23 @@ import com.intellij.ui.AnActionButtonRunnable;
 import com.intellij.uiDesigner.core.GridConstraints;
 import io.github.lmikoto.railgun.componet.NameEditDialog;
 import io.github.lmikoto.railgun.configurable.TemplateConfigurable;
+import io.github.lmikoto.railgun.dao.DataCenter;
 import io.github.lmikoto.railgun.entity.CodeDir;
 import io.github.lmikoto.railgun.entity.CodeGroup;
 import io.github.lmikoto.railgun.entity.CodeTemplate;
+import io.github.lmikoto.railgun.entity.ConfigModel;
 import io.github.lmikoto.railgun.entity.dict.TemplateDict;
 import io.github.lmikoto.railgun.utils.CollectionUtils;
 import io.github.lmikoto.railgun.utils.NotificationUtils;
 import io.github.lmikoto.railgun.utils.StringUtils;
 
+import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author liuyang
@@ -119,7 +125,7 @@ public class TemplateAddAction extends BaseTemplateAction implements AnActionBut
         public void actionPerformed(AnActionEvent anActionEvent) {
             NameEditDialog dialog = new NameEditDialog();
             dialog.setTitle("Create Code Template");
-            ComboBox<String> types = new ComboBox<>();
+            types = new ComboBox<>();
 
             types.addItem(TemplateDict.SQL2CLASS);
             types.addItem(TemplateDict.SQL2CONFIG);
@@ -145,7 +151,7 @@ public class TemplateAddAction extends BaseTemplateAction implements AnActionBut
     class CodeDirAddAction extends AnAction implements DumbAware {
 
         private final DefaultMutableTreeNode selectedNode;
-
+        private JFileChooser fileChoose;
         public CodeDirAddAction(DefaultMutableTreeNode selectedNode) {
             super("Code Dir", null, AllIcons.Nodes.JavaModule);
             this.selectedNode = selectedNode;
@@ -160,6 +166,15 @@ public class TemplateAddAction extends BaseTemplateAction implements AnActionBut
         public void actionPerformed(AnActionEvent anActionEvent) {
             NameEditDialog dialog = new NameEditDialog();
             dialog.setTitle("Create Code Dir");
+            //打开文件浏览器
+            ConfigModel configModel = DataCenter.getConfigModel();
+            openChooser(dialog, configModel);
+            dialog.getNameField().addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    openChooser(dialog, configModel);
+                }
+            });
             dialog.getButtonOK().addActionListener(e -> {
                 String name = dialog.getNameField().getText();
 //                if (StringUtils.isBlank(name)) {
@@ -170,6 +185,20 @@ public class TemplateAddAction extends BaseTemplateAction implements AnActionBut
                 dialog.setVisible(false);
             });
             showDialog(dialog, 300, 150);
+        }
+
+        private void openChooser(NameEditDialog dialog, ConfigModel configModel) {
+            String groupDir = Optional.ofNullable(configModel).map(conf -> conf.getGroupDir()).orElse("");
+            fileChoose = new JFileChooser(groupDir);
+            fileChoose.setMultiSelectionEnabled(false);
+            fileChoose.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            fileChoose.setDialogTitle("选择文件包路径");
+            int result = fileChoose.showOpenDialog(dialog);
+            if (JFileChooser.APPROVE_OPTION == result) {
+                String directory = fileChoose.getSelectedFile().getPath();
+                dialog.getNameField().setText(directory);
+            }
+            fileChoose.setVisible(false);
         }
     }
 }

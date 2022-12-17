@@ -1,15 +1,10 @@
 package io.github.lmikoto.railgun.componet;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import com.intellij.ui.JBSplitter;
 import io.github.lmikoto.railgun.entity.CodeTemplate;
 import io.github.lmikoto.railgun.entity.SetCurTemplate;
 import io.github.lmikoto.railgun.entity.dict.TemplateDict;
 import io.github.lmikoto.railgun.service.RenderCode;
-import io.github.lmikoto.railgun.service.impl.RenderEntity2Select;
-import io.github.lmikoto.railgun.service.impl.RenderSql2Class;
-import io.github.lmikoto.railgun.service.impl.RenderSql2Config;
-import io.github.lmikoto.railgun.service.impl.RenderVm2file;
 import io.github.lmikoto.railgun.utils.NotificationUtils;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -36,13 +31,9 @@ public class TemplateEditor extends JPanel implements ComponentListener {
     private JScrollPane scroll;
     private Map<String,RenderCode> renderActionMap;
     private CodeTemplate currentTemplate;
+    private Integer leftComponentWidth;
     public TemplateEditor() {
-        this.renderActionMap = Maps.newHashMapWithExpectedSize(4);
-        java.util.List<RenderCode> renderCodes = Lists.newArrayList(new RenderSql2Class(), new RenderSql2Config(),
-                new RenderEntity2Select(), new RenderVm2file());
-        renderCodes.forEach(renderCode -> {
-            renderActionMap.put(renderCode.getRenderType(), renderCode);
-        });
+
 //        RenderSql2Config action2 = ;
 //        RenderEntity2Select action3 = ;
 //        renderActionMap.put(action1.getRenderType(), action1);
@@ -100,14 +91,14 @@ public class TemplateEditor extends JPanel implements ComponentListener {
     }
 
     public void setCurrentTemplate(CodeTemplate currentTemplate) {
-        this.textArea.setText(currentTemplate.getContent());
         this.currentTemplate = currentTemplate;
     }
 
     @Override
     public void componentResized(ComponentEvent e) {
-        Container parent = TemplateEditor.this.getParent();
-        TemplateEditor.this.scroll.setPreferredSize(new Dimension(TemplateEditor.this.getWidth() - 50, parent.getHeight() - 50));
+        Container parent = TemplateEditor.this.getParent().getParent();
+        TemplateEditor.this.scroll.setPreferredSize(new Dimension(parent.getWidth() -((JBSplitter) parent).getFirstComponent().getWidth() - 30, parent.getHeight() - 50));
+        TemplateEditor.this.scroll.updateUI();
     }
 
     @Override

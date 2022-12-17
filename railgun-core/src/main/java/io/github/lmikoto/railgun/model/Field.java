@@ -52,6 +52,11 @@ public class Field extends BaseMappedProperty implements Serializable{
     private Boolean notNull;
 
     /**
+     * 备注
+     */
+    private Boolean primaryKey;
+
+    /**
      * 注解
      */
     private Map<String,Map<String,Object>> ans;

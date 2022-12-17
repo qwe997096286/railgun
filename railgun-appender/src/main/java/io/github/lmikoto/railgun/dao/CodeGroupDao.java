@@ -60,7 +60,7 @@ public class CodeGroupDao {
                             BufferedReader fis = new BufferedReader(new FileReader(file));
                             fileContent = new StringBuffer();
                             String bufferString = null;
-                            while (StringUtils.isNotEmpty(bufferString = fis.readLine())) {
+                            while (null != (bufferString = fis.readLine())) {
                                 fileContent.append(bufferString).append('\n');
                             }
                         } catch (IOException e) {

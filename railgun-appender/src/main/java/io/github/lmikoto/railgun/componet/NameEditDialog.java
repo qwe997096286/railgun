@@ -15,6 +15,7 @@ public class NameEditDialog extends JDialog {
     private JTextField nameField;
     @Getter
     private JPanel southPanel;
+    private JPanel northPanel;
 
 
     public NameEditDialog() {

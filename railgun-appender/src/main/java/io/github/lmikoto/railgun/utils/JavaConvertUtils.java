@@ -4,6 +4,7 @@ import com.github.javaparser.ast.Modifier;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.github.lmikoto.railgun.dao.DataCenter;
+import io.github.lmikoto.railgun.dict.SimpleDict;
 import io.github.lmikoto.railgun.entity.SimpleAnnotation;
 import io.github.lmikoto.railgun.entity.SimpleClass;
 import io.github.lmikoto.railgun.entity.SimpleField;
@@ -39,6 +40,10 @@ public class JavaConvertUtils {
             SimpleField simpleField = new SimpleField();
             simpleField.setModifiers(Collections.singletonList(Modifier.Keyword.PRIVATE));
             simpleField.setClazz(fieldClass);
+            simpleField.setName(field.getName());
+            if (field.getPrimaryKey()) {
+                simpleField.addLabel(SimpleDict.PRIMARY);
+            }
             fields.put(field.getName(), simpleField);
             if (StringUtils.isNotBlank(field.getComment())) {
                 simpleField.setComment(JavaUtils.getSimpleName(field.getComment()));
@@ -87,6 +92,10 @@ public class JavaConvertUtils {
             SimpleField simpleField = new SimpleField();
             simpleField.setModifiers(Collections.singletonList(Modifier.Keyword.PRIVATE));
             simpleField.setClazz(fieldClass);
+            simpleField.setName(field.getName());
+            if (field.getPrimaryKey()) {
+                simpleField.addLabel(SimpleDict.PRIMARY);
+            }
             fields.put(field.getName(), simpleField);
             SimpleAnnotation columnAnno = new SimpleAnnotation();
             columnAnno.setName("javax.persistence.Column");

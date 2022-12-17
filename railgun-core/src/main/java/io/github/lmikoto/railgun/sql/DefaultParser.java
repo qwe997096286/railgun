@@ -1,6 +1,7 @@
 package io.github.lmikoto.railgun.sql;
 
 import com.google.common.base.Throwables;
+import com.google.common.collect.Maps;
 import io.github.lmikoto.railgun.model.Field;
 import io.github.lmikoto.railgun.model.Table;
 import io.github.lmikoto.railgun.utils.CollectionUtils;
@@ -11,6 +12,7 @@ import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.comment.Comment;
 import net.sf.jsqlparser.statement.create.table.ColDataType;
 import net.sf.jsqlparser.statement.create.table.CreateTable;
+import net.sf.jsqlparser.statement.create.table.Index;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,6 +61,16 @@ public class DefaultParser extends AbstractParser {
                 Table table = new Table(fields);
                 net.sf.jsqlparser.schema.Table tableScheme = createTable.getTable();
                 table.setName(removeQuotes(tableScheme.getName()));
+                List<Index> indexes = createTable.getIndexes();
+                Map<String, Object> primaryKeyMap = Maps.newHashMap();
+                if (CollectionUtils.isNotEmpty(indexes)) {
+                    for (Index index : indexes) {
+                        if ("PRIMARY KEY".equals(index.getType())) {
+                            index.getColumns().forEach(columnParams -> primaryKeyMap.put(removeQuotes(columnParams.columnName),
+                                    columnParams));
+                        }
+                    }
+                }
                 String tableFullName;
                 if (fullName2Comment == null || fullName2Comment.isEmpty() ) {
                     List<String> strList = createTable.getTableOptionsStrings();
@@ -90,6 +102,12 @@ public class DefaultParser extends AbstractParser {
                         field.setComment(fullName2Comment.get(tableFullName + "." + it.getColumnName().toUpperCase()));
                     } else {
                         field.setComment(getColumnComment(it.getColumnSpecs()));
+                    }
+                    // 主键
+                    if (primaryKeyMap.containsKey(columnName)) {
+                        field.setPrimaryKey(true);
+                    } else {
+                        field.setPrimaryKey(false);
                     }
                     List<String> columnSpecs = it.getColumnSpecs();
                     if (CollectionUtils.isNotEmpty(columnSpecs)) {
