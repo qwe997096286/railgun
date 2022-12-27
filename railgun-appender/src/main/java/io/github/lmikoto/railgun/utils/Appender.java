@@ -11,10 +11,6 @@ import io.github.lmikoto.railgun.entity.SimpleAnnotation;
 import io.github.lmikoto.railgun.entity.SimpleClass;
 import io.github.lmikoto.railgun.entity.SimpleField;
 import io.github.lmikoto.railgun.entity.SimpleMethod;
-import io.github.lmikoto.railgun.utils.CollectionUtils;
-import io.github.lmikoto.railgun.utils.JavaUtils;
-import io.github.lmikoto.railgun.utils.JsonUtils;
-import io.github.lmikoto.railgun.utils.StringUtils;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -154,9 +150,9 @@ public class Appender {
                 }
 
                 if(Objects.nonNull(m.getParams())){
-                    Set<Map.Entry<String, SimpleClass>> entries = m.getParams().entrySet();
-                    for (Map.Entry<String, SimpleClass> entry: entries){
-                        methodDeclaration.addParameter(entry.getValue().getSimpleName(),entry.getKey());
+                    List<SimpleField> params = m.getParams();
+                    for (SimpleField param: params){
+                        methodDeclaration.addParameter(param.getClazz().getSimpleName(), param.getName());
                     }
                 }
 

@@ -39,6 +39,9 @@ public class GroupConfigPane extends JScrollPane implements ActionListener, Comp
     private JTextField groupDir;
     private JButton chooseBtn;
     private JButton confFollow;
+    private JTextField controllerPackage;
+    private JTextField servicePackage;
+    private JTextField daoPackage;
 
     public GroupConfigPane() {
         super();
@@ -64,6 +67,9 @@ public class GroupConfigPane extends JScrollPane implements ActionListener, Comp
         delCheckBox.setSelected(configModel.isHasDel());
         delBatchCheckBox.setSelected(configModel.isHasDelBatch());
         groupDir.setText(configModel.getGroupDir());
+        controllerPackage.setText(configModel.getControllerPackage());
+        servicePackage.setText(configModel.getServicePackage());
+        daoPackage.setText(configModel.getDaoPackage());
         DataCenter.getCurrentGroup().getVelocityContext().put("config", configModel);
     }
 
@@ -82,6 +88,9 @@ public class GroupConfigPane extends JScrollPane implements ActionListener, Comp
                 configModel.setHasDel(delCheckBox.isSelected());
                 configModel.setHasDelBatch(delBatchCheckBox.isSelected());
                 configModel.setGroupDir(groupDir.getText());
+                configModel.setControllerPackage(controllerPackage.getText());
+                configModel.setServicePackage(servicePackage.getText());
+                configModel.setDaoPackage(daoPackage.getText());
                 DataCenter.getCurrentGroup().getVelocityContext().put("config", configModel);
             }
         } else if (source.equals(this.renderBtn)) {

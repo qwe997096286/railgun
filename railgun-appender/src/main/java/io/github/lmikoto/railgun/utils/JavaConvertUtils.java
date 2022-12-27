@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 /**
  * @author jinwq
@@ -43,6 +44,9 @@ public class JavaConvertUtils {
             simpleField.setName(field.getName());
             if (field.getPrimaryKey()) {
                 simpleField.addLabel(SimpleDict.PRIMARY);
+            }
+            if (field.getNotNull()) {
+                simpleField.addLabel(SimpleDict.NOT_NULL);
             }
             fields.put(field.getName(), simpleField);
             if (StringUtils.isNotBlank(field.getComment())) {
@@ -86,7 +90,77 @@ public class JavaConvertUtils {
 //            构造属性
         Random random = new Random();
         setSerialImpl(simpleClass, fields, random);
+        boolean unionKey = setUnionPrimaryKey(simpleClass, fields, table.getFields());
         for (Field field : table.getFields()) {
+            SimpleClass fieldClass = new SimpleClass();
+            fieldClass.setName(field.getFieldType());
+            SimpleField simpleField = new SimpleField();
+            simpleField.setModifiers(Collections.singletonList(Modifier.Keyword.PRIVATE));
+            simpleField.setClazz(fieldClass);
+            simpleField.setName(field.getName());
+            if (field.getPrimaryKey()) {
+                if (!unionKey) {
+                    simpleClass.setPk(fieldClass);
+                }
+                simpleField.addLabel(SimpleDict.PRIMARY);
+            }
+            if (field.getNotNull()) {
+                simpleField.addLabel(SimpleDict.NOT_NULL);
+            }
+            fields.put(field.getName(), simpleField);
+            List<SimpleAnnotation> fieldAnnotations = Lists.newArrayListWithExpectedSize(1);
+            if (!unionKey && field.getPrimaryKey()) {
+                SimpleAnnotation idAnnotation = new SimpleAnnotation();
+                idAnnotation.setName("javax.persistence.Id");
+                idAnnotation.setExpr("@Id");
+                fieldAnnotations.add(idAnnotation);
+            }
+            SimpleAnnotation columnAnno = new SimpleAnnotation();
+            columnAnno.setName("javax.persistence.Column");
+            String expr = "@Column(name = \"" + field.getColumn() + "\"";
+            if (unionKey && field.getPrimaryKey()) {
+                expr += ", insertable = false, updatable = false";
+            } else if (field.getNotNull()) {
+                expr += ", nullable = false";
+            }
+            expr += ")";
+            columnAnno.setExpr(expr);
+            fieldAnnotations.add(columnAnno);
+            if (StringUtils.isNotBlank(field.getComment())) {
+                simpleField.setComment(JavaUtils.getSimpleName(field.getComment()));
+            }
+
+            simpleField.setAnnotations(fieldAnnotations);
+        }
+        simpleClass.setFields(fields);
+//            构造get、set方法
+        List<SimpleMethod> methods = Lists.newArrayListWithExpectedSize(fields.size() * 2);
+        simpleClass.setMethods(methods);
+        return simpleClass;
+    }
+
+    private static boolean setUnionPrimaryKey(SimpleClass simpleClass, LinkedHashMap<String, SimpleField> fields, List<Field> columns) {
+        List<Field> columnsPrimary = columns.stream().filter(Field::getPrimaryKey).collect(Collectors.toList());
+        if (columnsPrimary.size() < 2) {
+            return false;
+        }
+        SimpleAnnotation eIdAnno = new SimpleAnnotation();
+        eIdAnno.setName("javax.persistence.Embeddable");
+        eIdAnno.setExpr("@Embeddable");
+        SimpleClass pk = new SimpleClass();
+        pk.setName(simpleClass.getName() + "PK");
+        pk.setAnnotations(Collections.singletonList(eIdAnno));
+        SimpleField pkField = new SimpleField();
+        SimpleAnnotation fieldPKAnno = new SimpleAnnotation();
+        fieldPKAnno.setName("javax.persistence.EmbeddedId");
+        fieldPKAnno.setExpr("@EmbeddedId");
+        pkField.setClazz(pk);
+        pkField.setComment("主键");
+        pkField.setAnnotations(Collections.singletonList(fieldPKAnno));
+        fields.put("pk", pkField);
+        LinkedHashMap<String, SimpleField> pkFields = Maps.newLinkedHashMapWithExpectedSize(columnsPrimary.size());
+        setSerialImpl(pk, pkFields, new Random());
+        for (Field field : columnsPrimary) {
             SimpleClass fieldClass = new SimpleClass();
             fieldClass.setName(field.getFieldType());
             SimpleField simpleField = new SimpleField();
@@ -96,21 +170,29 @@ public class JavaConvertUtils {
             if (field.getPrimaryKey()) {
                 simpleField.addLabel(SimpleDict.PRIMARY);
             }
-            fields.put(field.getName(), simpleField);
+            if (field.getNotNull()) {
+                simpleField.addLabel(SimpleDict.NOT_NULL);
+            }
             SimpleAnnotation columnAnno = new SimpleAnnotation();
             columnAnno.setName("javax.persistence.Column");
-            columnAnno.setExpr("@Column(name = \"" + field.getColumn() + "\")");
+            String expr = "@Column(name = \"" + field.getColumn() + "\"";
+            if (field.getNotNull()) {
+                expr += ",nullable = false)";
+            } else {
+                expr += ")";
+            }
+            columnAnno.setExpr(expr);
             if (StringUtils.isNotBlank(field.getComment())) {
                 simpleField.setComment(JavaUtils.getSimpleName(field.getComment()));
             }
             List<SimpleAnnotation> fieldAnnotations = Lists.newArrayList(columnAnno);
             simpleField.setAnnotations(fieldAnnotations);
+            pkFields.put(field.getName(), simpleField);
         }
-        simpleClass.setFields(fields);
-//            构造get、set方法
-        List<SimpleMethod> methods = Lists.newArrayListWithExpectedSize(fields.size() * 2);
-        simpleClass.setMethods(methods);
-        return simpleClass;
+        fields.put("pk", pkField);
+        pk.setFields(pkFields);
+        simpleClass.setPk(pk);
+        return true;
     }
 
     public static void setSerialImpl(SimpleClass simpleClass, LinkedHashMap<String, SimpleField> fields, Random random) {

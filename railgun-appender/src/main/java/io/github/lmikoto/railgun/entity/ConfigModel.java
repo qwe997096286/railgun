@@ -18,4 +18,22 @@ public class ConfigModel {
     private boolean hasDelBatch;
     private boolean hasDel;
     private String groupDir;
+    private String controllerPackage;
+    private String servicePackage;
+    private String daoPackage;
+
+    public String getPackageName() {
+        // 获取包名
+        String groupDir = this.groupDir;
+        int index = groupDir.lastIndexOf("/main/java/");
+        if (index == -1) {
+            return this.packageName;
+        }
+        if (groupDir.lastIndexOf('/') == groupDir.length() - 1) {
+            groupDir = groupDir.substring(0, groupDir.length() - 1);
+        }
+        String packageName = groupDir.substring(index + 11)
+                .replaceAll("/", ".");
+        return packageName;
+    }
 }

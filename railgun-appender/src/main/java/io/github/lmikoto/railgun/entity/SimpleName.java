@@ -2,6 +2,7 @@ package io.github.lmikoto.railgun.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.github.lmikoto.railgun.utils.JavaUtils;
+import io.github.lmikoto.railgun.utils.StringUtils;
 
 /**
  * @author liuyang

@@ -2,7 +2,6 @@ package io.github.lmikoto.railgun.action;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.ui.components.JBScrollPane;
 import io.github.lmikoto.railgun.componet.TemplateEditor;
 import io.github.lmikoto.railgun.entity.dict.TemplateDict;
 
@@ -20,7 +19,7 @@ public class RenderSelectAction extends AnAction{
         // TODO: insert action logic here
         TemplateEditor templateEditor = new TemplateEditor(TemplateDict.ENTITY2SELECT);
         JDialog dialog = new JDialog();
-        JBScrollPane jScrollPane = new JBScrollPane();
+        JScrollPane jScrollPane = new JScrollPane();
         jScrollPane.getViewport().add(templateEditor);
         jScrollPane.setVisible(true);
         dialog.setContentPane(jScrollPane);

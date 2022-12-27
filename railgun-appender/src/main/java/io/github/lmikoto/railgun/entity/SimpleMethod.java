@@ -3,7 +3,6 @@ package io.github.lmikoto.railgun.entity;
 import com.github.javaparser.ast.Modifier;
 import lombok.Data;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 
 /**
@@ -21,7 +20,7 @@ public class SimpleMethod {
 
     private List<Modifier.Keyword> modifiers;
 
-    private LinkedHashMap<String,SimpleClass> params;
+    private List<SimpleField> params;
 
     private String comment;
 

@@ -10,7 +10,6 @@ import com.intellij.ui.GuiUtils;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.treeStructure.Tree;
-import com.intellij.util.ui.JBUI;
 import io.github.lmikoto.railgun.action.ItemDeleteAction;
 import io.github.lmikoto.railgun.action.SaveGroupAction;
 import io.github.lmikoto.railgun.action.TemplateAddAction;
@@ -110,22 +109,22 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
         //设置group配置面版
         groupConfigPane = new GroupConfigPane();
         JPanel templatesPanel = toolbarDecorator.createPanel();
-        templatesPanel.setPreferredSize(JBUI.size(240,100));
+//        templatesPanel.setPreferredSize(JBUI.size(240,100));
         jSplitPane = new JSplitPane();
-        jSplitPane.setDividerLocation(240);
+        jSplitPane.setLastDividerLocation(240);
         jSplitPane.setOrientation(JSplitPane.HORIZONTAL_SPLIT);
-        jSplitPane.setContinuousLayout(true);
         jSplitPane.setBorder(BorderFactory.createEmptyBorder());
-        jSplitPane.setLeftComponent(templatesPanel);
+        templatesPanel.setMinimumSize(new Dimension(240, 300));
+        jSplitPane.setTopComponent(templatesPanel);
         // 配置面板右侧
         jPanel = new ITabbedPane();
         jPanel.add("code group", groupConfigPane);
         jPanel.add("code template", templateEditor);
         jPanel.setVisible(true);
-        jSplitPane.setRightComponent(jPanel);
+        jSplitPane.setBottomComponent(jPanel);
         add(jSplitPane, BorderLayout.CENTER);
-        this.addComponentListener(jPanel);
-        templatesPanel.addComponentListener(jPanel);
+        this.addComponentListener(templateEditor);
+//        templatesPanel.addComponentListener(jPanel);
         GuiUtils.replaceJSplitPaneWithIDEASplitter(this);
 
     }
@@ -238,12 +237,16 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
                 return tempCellRenderer.getTreeCellRendererComponent(tree, node.getName(), selected, expanded, false, row, hasFocus);
             }
             else if (obj instanceof CodeDir) {
-                CodeDir group = (CodeDir) obj;
                 DefaultTreeCellRenderer tempCellRenderer = new DefaultTreeCellRenderer();
                 tempCellRenderer.setOpenIcon(AllIcons.Nodes.Folder);
                 tempCellRenderer.setClosedIcon(AllIcons.Nodes.Folder);
                 tempCellRenderer.setLeafIcon(AllIcons.Nodes.Folder);
-                return tempCellRenderer.getTreeCellRendererComponent(tree, group.getName(), selected, expanded, false, row, hasFocus);
+                CodeDir group = (CodeDir) obj;
+                String name = null;
+                if (DataCenter.getConfigModel() != null) {
+                    name = group.getName().replaceFirst(DataCenter.getConfigModel().getGroupDir(), "");
+                }
+                return tempCellRenderer.getTreeCellRendererComponent(tree, name, selected, expanded, false, row, hasFocus);
             }
             else if (obj instanceof CodeTemplate) {
                 CodeTemplate node = (CodeTemplate) obj;

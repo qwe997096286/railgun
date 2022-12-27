@@ -6,6 +6,7 @@ import io.github.lmikoto.railgun.utils.Appender;
 import io.github.lmikoto.railgun.utils.JsonUtils;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -28,6 +29,7 @@ public class RailgunTest {
 
     @Test
     @SneakyThrows
+    @Ignore
     public void gen(){
         String config = new String(Files.readAllBytes(Paths.get(configPath)));
         railgun.fullProcess(config,testPath + File.separator + "TestClass.java");

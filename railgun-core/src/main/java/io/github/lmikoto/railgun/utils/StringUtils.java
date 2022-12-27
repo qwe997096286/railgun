@@ -39,11 +39,64 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
                 if (i == 0 && firstUpper) {
                     sb.append(Character.toUpperCase(c));
                 } else {
-                    sb.append(c);
+                    sb.append(Character.toLowerCase(c));
                 }
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * 转化首字母大小
+     * @param firstUpper 首字符是否大写
+     */
+    public static String camelToCamel(String param, boolean firstUpper) {
+        if (param == null || "".equals(param.trim())) {
+            return "";
+        }
+        char c = param.charAt(0);
+        if (Character.isUpperCase(c)) {
+            if (firstUpper) {
+                return param;
+            } else {
+                return param.replaceFirst(c + "", Character.toLowerCase(c) + "");
+            }
+        } else {
+            if (firstUpper) {
+                return param.replaceFirst(c + "", Character.toUpperCase(c) + "");
+            } else {
+                return param;
+            }
+        }
+    }
+
+    /**
+     * 根据大写字母分隔
+     * @param param 字符串
+     */
+    public static String camelToSub(String param, int begin, int end) {
+        if (param == null || "".equals(param.trim())) {
+            return "";
+        }
+        StringBuilder lastWord = new StringBuilder();
+        StringBuilder result = new StringBuilder();
+        int j = 0;
+        for(int i = 0; i < param.length() ; i++) {
+            if (i != 0 && Character.isUpperCase(param.charAt(i))) {
+                if (begin <= j && end >= j) {
+                    result.append(lastWord);
+
+                }
+                lastWord = new StringBuilder();
+                j++;
+            }
+            lastWord.append(param.charAt(i));
+        }
+        if (begin <= j && end >= j) {
+            result.append(lastWord);
+
+        }
+        return result.toString();
     }
 
     /**

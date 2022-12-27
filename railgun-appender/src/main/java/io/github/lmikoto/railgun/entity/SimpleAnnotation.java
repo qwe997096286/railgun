@@ -15,4 +15,12 @@ public class SimpleAnnotation implements SimpleName {
     private String name;
 
     private String expr;
+
+    public SimpleAnnotation() {
+    }
+
+    public SimpleAnnotation(String name, String expr) {
+        this.name = name;
+        this.expr = expr;
+    }
 }

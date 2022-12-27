@@ -9,10 +9,10 @@ import lombok.Data;
 @Data
 public class FieldsConfigModel {
 
-    private boolean export;
-    private boolean importable;
-    private boolean paging;
-    private boolean edit;
-    private boolean create;
-    private boolean show;
+    private boolean export = true;
+    private boolean importable = true;
+    private boolean paging = true;
+    private boolean edit = true;
+    private boolean create = true;
+    private boolean show = true;
 }

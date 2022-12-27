@@ -25,18 +25,27 @@ public class CodeGroupDao {
 
     public static CodeGroup getGroup() {
         File dataFile = new File("./saveData/auto_data.text");
+        String json = null;
         try {
             FileReader fileReader = new FileReader(dataFile);
-            StringBuffer buffer = new StringBuffer();
-            char[] jsonChar = new char[READING_SIZE];
-            int i = 0;
-            while (fileReader.read(jsonChar, i * READING_SIZE, READING_SIZE) != -1) {
-                int amt = fileReader.read(jsonChar);
-                buffer.append(jsonChar);
+            StringBuffer jsonContent = null;
+            try {
+                if (!dataFile.exists()) {
+                    dataFile.createNewFile();
+                }
+                BufferedReader fis = new BufferedReader(fileReader);
+                jsonContent = new StringBuffer();
+                String bufferString = null;
+                while (null != (bufferString = fis.readLine())) {
+                    jsonContent.append(bufferString).append('\n');
+                }
+                json = jsonContent.toString();
+            } catch (IOException e) {
+                log.error(Throwables.getStackTraceAsString(e));
             }
 
 
-            CodeGroup jsonObj = JsonUtils.fromJson(buffer.toString(), new JsonUtils.TypeReference<CodeGroup>() {
+            CodeGroup jsonObj = JsonUtils.fromJson(json, new JsonUtils.TypeReference<CodeGroup>() {
             });
             List<CodeDir> dirs = jsonObj.getDirs();
             if (CollectionUtils.isNotEmpty(dirs)) {

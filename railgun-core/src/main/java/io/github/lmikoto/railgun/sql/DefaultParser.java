@@ -48,11 +48,11 @@ public class DefaultParser extends AbstractParser {
                     instanceof Comment).map(statement -> (Comment) statement).collect(Collectors
                     .toMap((Comment comment) -> {
                 if (Objects.nonNull(comment.getTable())) {
-                    return comment.getTable().getFullyQualifiedName().toUpperCase();
+                    return removeQuotes(comment.getTable().getFullyQualifiedName().toUpperCase());
                 } else if (Objects.nonNull(comment.getColumn())) {
-                    return comment.getColumn().getFullyQualifiedName().toUpperCase();
+                    return removeQuotes(comment.getColumn().getFullyQualifiedName().toUpperCase());
                 } else if (Objects.nonNull(comment.getView())) {
-                    return comment.getView().getFullyQualifiedName().toUpperCase();
+                    return removeQuotes(comment.getView().getFullyQualifiedName().toUpperCase());
                 }
                 return null;
             }, comment -> removeQuotes(comment.getComment().toString())));
@@ -82,7 +82,7 @@ public class DefaultParser extends AbstractParser {
                     }
                     tableFullName = null;
                 } else {
-                    tableFullName = createTable.getTable().getFullyQualifiedName().toUpperCase();
+                    tableFullName = removeQuotes(createTable.getTable().getFullyQualifiedName().toUpperCase());
                     table.setTable(removeQuotes(fullName2Comment.get(tableFullName)));
                 }
                 createTable.getColumnDefinitions().forEach(it -> {
@@ -98,8 +98,8 @@ public class DefaultParser extends AbstractParser {
                     field.setColumnType(colDataType.getDataType());
                     field.setColumnSize(firstOrNull(colDataType.getArgumentsStringList()));
                     // comment注释
-                    if (StringUtils.isNotEmpty(tableFullName) && fullName2Comment.containsKey(tableFullName + "." + it.getColumnName().toUpperCase())) {
-                        field.setComment(fullName2Comment.get(tableFullName + "." + it.getColumnName().toUpperCase()));
+                    if (StringUtils.isNotEmpty(tableFullName) && fullName2Comment.containsKey(tableFullName + "." + removeQuotes(it.getColumnName().toUpperCase()))) {
+                        field.setComment(fullName2Comment.get(tableFullName + "." + removeQuotes(it.getColumnName().toUpperCase())));
                     } else {
                         field.setComment(getColumnComment(it.getColumnSpecs()));
                     }
@@ -110,6 +110,7 @@ public class DefaultParser extends AbstractParser {
                         field.setPrimaryKey(false);
                     }
                     List<String> columnSpecs = it.getColumnSpecs();
+                    field.setNotNull(false);
                     if (CollectionUtils.isNotEmpty(columnSpecs)) {
                         for (int i = 0 ; i < columnSpecs.size() - 1 ; i++) {
                             if ("NOT".equalsIgnoreCase(columnSpecs.get(i)) && "NULL".equalsIgnoreCase(columnSpecs.get(i + 1))) {

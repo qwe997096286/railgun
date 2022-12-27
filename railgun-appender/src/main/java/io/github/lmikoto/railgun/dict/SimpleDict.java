@@ -6,4 +6,14 @@ package io.github.lmikoto.railgun.dict;
  */
 public interface SimpleDict {
     String PRIMARY = "PRIMARY KEY";
+    String EXPORT = "EXPORT";
+    String IMPORT = "IMPORT";
+    String PAGING = "PAGING";
+    String EDIT = "EDIT";
+    String CREATE = "CREATE";
+    String SHOW = "SHOW";
+    String NOT_NULL = "NOT_NULL";
+    String CONTROLLER = "controller";
+    String SERVICE = "service";
+    String DAO = "dao";
 }
