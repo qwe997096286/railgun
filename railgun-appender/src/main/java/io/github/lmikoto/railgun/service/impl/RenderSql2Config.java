@@ -19,6 +19,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author jinwq
@@ -97,6 +98,10 @@ public class RenderSql2Config implements RenderCode {
             dialog.setVisible(true);
             velocityContext.put("po", po);
             velocityContext.put("dto", dto);
+            if (Optional.ofNullable(po.getPk()).map(SimpleClass::getAnnotations).map(list -> list.stream().anyMatch(annotation ->
+                    "@Embeddable".equals(annotation.getExpr()))).isPresent()) {
+                velocityContext.put("pk", po.getPk());
+            }
         }
         return null;
     }

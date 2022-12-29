@@ -3,7 +3,7 @@ package ${config.packageName}.rest;
 import me.zhengjie.annotation.Log;
 import ${config.packageName}.domain.${po.getSimpleName()};
 import ${config.packageName}.service.${po.getUpCamelPOName()}Service;
-import ${config.packageName}.service.dto.${po.getUpCamelPOName()}QueryCriteria;
+import ${config.packageName}.service.dto.${dto.getSimpleName()};
 import org.springframework.data.domain.Pageable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -65,7 +65,7 @@ public class ${po.getUpCamelPOName()}Controller {
     @Log("删除${po.comment}")
     @ApiOperation("删除${po.comment}")
     @PreAuthorize("@el.check('${po.getLowCamelPOName()}:del')")
-    public ResponseEntity<Object> delete${po.getUpCamelPOName()}(@RequestBody ${pkColumnType}[] ids) {
+    public ResponseEntity<Object> delete${po.getUpCamelPOName()}(@RequestBody ${po.pk.getSimpleName()}[] ids) {
         ${po.getLowCamelPOName()}Service.deleteAll(ids);
         return new ResponseEntity<>(HttpStatus.OK);
     }

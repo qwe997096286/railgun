@@ -135,6 +135,9 @@ public class JavaConvertUtils {
         simpleClass.setFields(fields);
 //            构造get、set方法
         List<SimpleMethod> methods = Lists.newArrayListWithExpectedSize(fields.size() * 2);
+        if (simpleClass.getPk() == null) {
+            simpleClass.setPk(new SimpleClass("String"));
+        }
         simpleClass.setMethods(methods);
         return simpleClass;
     }

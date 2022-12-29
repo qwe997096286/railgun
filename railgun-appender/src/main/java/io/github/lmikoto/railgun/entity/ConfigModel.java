@@ -18,9 +18,9 @@ public class ConfigModel {
     private boolean hasDelBatch;
     private boolean hasDel;
     private String groupDir;
-    private String controllerPackage;
-    private String servicePackage;
-    private String daoPackage;
+    private String saveFileDir;
+    private String entityDir;
+    private String dtoDir;
 
     public String getPackageName() {
         // 获取包名

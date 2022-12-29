@@ -23,7 +23,6 @@ public class ItemDeleteAction extends BaseTemplateAction implements AnActionButt
                 JOptionPane.YES_NO_OPTION);
         if (n == JOptionPane.YES_OPTION) {
             deleteItem(selectedNode);
-            saveTree();
         }
         updateUI();
     }

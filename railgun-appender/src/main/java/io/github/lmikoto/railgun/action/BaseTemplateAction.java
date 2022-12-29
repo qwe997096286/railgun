@@ -8,6 +8,7 @@ import io.github.lmikoto.railgun.dao.DataCenter;
 import io.github.lmikoto.railgun.entity.CodeDir;
 import io.github.lmikoto.railgun.entity.CodeGroup;
 import io.github.lmikoto.railgun.entity.CodeTemplate;
+import io.github.lmikoto.railgun.entity.ConfigModel;
 import io.github.lmikoto.railgun.utils.CollectionUtils;
 import io.github.lmikoto.railgun.utils.JsonUtils;
 import lombok.Getter;
@@ -23,8 +24,11 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -79,7 +83,9 @@ public abstract class BaseTemplateAction {
         }
         this.groupList.add(group);
         addNode(treeRoot, new DefaultMutableTreeNode(group));
-        saveTree();
+        if ((groupList.size() == 1)) {
+            saveTree();
+        }
     }
 
     protected void addDir(CodeDir dir, DefaultMutableTreeNode selectPath) {
@@ -90,9 +96,13 @@ public abstract class BaseTemplateAction {
             dirs = Lists.newArrayList();
             codeGroup.setDirs(dirs);
         }
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddhhmmssZ");
+        dir.setRegTime(sdf.format(new Date()));
         dirs.add(dir);
         addNode(selectPath, new DefaultMutableTreeNode(dir));
-        saveTree();
+        if (userObjectPath[1].equals(groupList.get(0))) {
+            saveTree();
+        }
     }
 
     protected void addTemplate(CodeTemplate codeTemplate, DefaultMutableTreeNode selectPath) {
@@ -107,7 +117,9 @@ public abstract class BaseTemplateAction {
         }
         templates.add(codeTemplate);
         addNode(selectPath, new DefaultMutableTreeNode(codeTemplate));
-        saveTree();
+        if (userObjectPath[1].equals(groupList.get(0))) {
+            saveTree();
+        }
     }
 
     protected void deleteItem(DefaultMutableTreeNode node) {
@@ -116,18 +128,17 @@ public abstract class BaseTemplateAction {
         }
         DefaultMutableTreeNode parent =(DefaultMutableTreeNode) node.getParent();
         Object userObject = node.getUserObject();
+        Object[] userObjectPath = node.getUserObjectPath();
         if (userObject instanceof CodeGroup) {
             CodeGroup codeGroup = (CodeGroup) userObject;
             groupList.remove(codeGroup);
         } else if (userObject instanceof CodeDir) {
             CodeDir codeDir = (CodeDir) userObject;
-            Object[] userObjectPath = node.getUserObjectPath();
             CodeGroup codeGroup = groupList.get(groupList.indexOf(userObjectPath[1]));
             List<CodeDir> dirs = codeGroup.getDirs();
             dirs.remove(codeDir);
         } else if (userObject instanceof CodeTemplate){
             CodeTemplate template = (CodeTemplate) userObject;
-            Object[] userObjectPath = node.getUserObjectPath();
             CodeGroup codeGroup = groupList.get(groupList.indexOf(userObjectPath[1]));
             List<CodeDir> dirs = codeGroup.getDirs();
             CodeDir codeDir = dirs.get(dirs.indexOf(userObjectPath[2]));
@@ -136,38 +147,55 @@ public abstract class BaseTemplateAction {
         }
         parent.remove(node);
         updateUI();
-        saveTree();
+        if (userObjectPath[1].equals(groupList.get(0))) {
+            saveTree();
+        }
     }
 
 
     protected boolean saveTree() {
-        File dataFile = new File( "./saveData/auto_data.text");
+        return saveTree("./saveData/auto_data.text", groupList.get(0));
+    }
+    protected boolean saveTree(String dirStr, CodeGroup codeGroup) {
+        File dataFile = new File(dirStr);
         FileWriter fileWriter = null;
         try {
             if (!dataFile.exists()) {
-                File dir = new File("./saveData/");
+                File dir = dataFile.getParentFile();
                 if (!dir.exists()) {
                     dir.mkdir();
                 }
                 dataFile.createNewFile();
             }
             fileWriter = new FileWriter(dataFile);
-            List<CodeDir> dirs = groupList.get(0).getDirs();
+            List<CodeDir> dirs = codeGroup.getDirs();
             if (CollectionUtils.isNotEmpty(dirs)) {
-                List<CodeTemplate> templates = dirs.stream().map(CodeDir::getTemplates).filter(Objects::nonNull)
+                List<CodeTemplate> templates = dirs.stream().map(dir -> {
+                            List<CodeTemplate> setDirTemplate = dir.getTemplates();
+                            if (CollectionUtils.isNotEmpty(setDirTemplate)) {
+                                setDirTemplate.forEach( codeTemplate -> codeTemplate.setDir(dir.getRegTime()));
+                            }
+                            return setDirTemplate;
+                        }).filter(Objects::nonNull)
                         .flatMap(List::stream).filter(template -> StringUtils.isNotBlank(template.getContent())).collect(Collectors.toList());
                 if (CollectionUtils.isNotEmpty(templates)) {
                     templates.forEach(template -> {
                         String path = null;
+                        ConfigModel configModel = DataCenter.getConfigModel();
+                        String saveDir = Optional.ofNullable(configModel).map(ConfigModel::getSaveFileDir).orElse("./");
                         if (StringUtils.isNotEmpty(template.getDir())) {
-                            path = template.getDir() + "/";
+                            path = saveDir + template.getDir() + "/";
                         } else {
-                            path = "saveData/";
+                            path = saveDir + "saveData/";
                         }
                         File file = new File(path + template.getName());
                         FileOutputStream fos = null;
                         try {
                             if (!file.exists()) {
+                                File dir = file.getParentFile();
+                                if (!dir.exists()) {
+                                    dir.mkdir();
+                                }
                                 file.createNewFile();
                             }
                             fos = new FileOutputStream(file);
@@ -186,7 +214,7 @@ public abstract class BaseTemplateAction {
                     });
                 }
             }
-            fileWriter.write(JsonUtils.toPrettyJson(groupList.get(0)));
+            fileWriter.write(JsonUtils.toPrettyJson(codeGroup));
             return true;
         } catch (IOException e) {
             throw new RuntimeException(e);

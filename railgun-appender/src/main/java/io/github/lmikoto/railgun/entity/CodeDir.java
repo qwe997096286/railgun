@@ -15,7 +15,8 @@ public class CodeDir implements Serializable {
     private static final long serialVersionUID = 213432213123213214L;
     private String name;
     private List<CodeTemplate> templates;
-
+    private String regTime;
+    private Boolean enable = true;
     public static CodeDir fromName(String name) {
         CodeDir codeDir = new CodeDir();
         codeDir.setName(name);
@@ -27,10 +28,10 @@ public class CodeDir implements Serializable {
     public boolean equals(Object o) {
         if (o == this) {
             return true;
-        } else if (!(o instanceof CodeGroup)) {
+        } else if (!(o instanceof CodeDir)) {
             return false;
         } else {
-            CodeGroup other = (CodeGroup) o;
+            CodeDir other = (CodeDir) o;
             Object this$name = this.getName();
             Object other$name = other.getName();
             if (this$name == null) {

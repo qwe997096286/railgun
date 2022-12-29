@@ -1,5 +1,6 @@
 package io.github.lmikoto.railgun.utils;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
 
@@ -9,7 +10,7 @@ import lombok.SneakyThrows;
  */
 public class JsonUtils {
     private static final ObjectMapper MAPPER = new ObjectMapper();
-
+    static {{MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);}}
     @SneakyThrows
     public static String toPrettyJson(Object o){
         return MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(o);

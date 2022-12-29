@@ -17,6 +17,7 @@ public class CodeTemplate implements Serializable {
     private String type;
     @JsonIgnore
     private String content;
+    @JsonIgnore
     private String dir;
     public static CodeTemplate fromName(String name){
         return CodeTemplate.fromName(name, "template");
@@ -33,10 +34,10 @@ public class CodeTemplate implements Serializable {
     public boolean equals(Object o) {
         if (o == this) {
             return true;
-        } else if (!(o instanceof CodeGroup)) {
+        } else if (!(o instanceof CodeTemplate)) {
             return false;
         } else {
-            CodeGroup other = (CodeGroup) o;
+            CodeTemplate other = (CodeTemplate) o;
             Object this$name = this.getName();
             Object other$name = other.getName();
             if (this$name == null) {

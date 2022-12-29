@@ -67,6 +67,7 @@ public class TemplateAddAction extends BaseTemplateAction implements AnActionBut
         // 2. 如果选中的是group, 则可以新增root, group以及template
         if (object instanceof CodeGroup) {
             CodeDirAddAction codeDirAddAction = new CodeDirAddAction(selectedNode);
+            actions.add(groupAction);
             actions.add(codeDirAddAction);
         } else if (object instanceof CodeDir) {
             CodeTemplateAddAction templateAction = new CodeTemplateAddAction(selectedNode, TemplateDict.SQL2CLASS);

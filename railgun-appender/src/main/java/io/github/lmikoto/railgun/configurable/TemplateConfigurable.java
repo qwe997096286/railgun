@@ -13,6 +13,7 @@ import com.intellij.ui.treeStructure.Tree;
 import io.github.lmikoto.railgun.action.ItemDeleteAction;
 import io.github.lmikoto.railgun.action.SaveGroupAction;
 import io.github.lmikoto.railgun.action.TemplateAddAction;
+import io.github.lmikoto.railgun.componet.DirConfigPane;
 import io.github.lmikoto.railgun.componet.GroupConfigPane;
 import io.github.lmikoto.railgun.componet.ITabbedPane;
 import io.github.lmikoto.railgun.componet.TemplateEditor;
@@ -21,6 +22,7 @@ import io.github.lmikoto.railgun.dao.DataCenter;
 import io.github.lmikoto.railgun.entity.CodeDir;
 import io.github.lmikoto.railgun.entity.CodeGroup;
 import io.github.lmikoto.railgun.entity.CodeTemplate;
+import io.github.lmikoto.railgun.service.AppendNode;
 import io.github.lmikoto.railgun.service.RenderCode;
 import io.github.lmikoto.railgun.service.impl.RenderEntity2Select;
 import io.github.lmikoto.railgun.service.impl.RenderSql2Class;
@@ -45,7 +47,7 @@ import java.util.Objects;
  * @author liuyang
  * 2021/3/7 5:57 下午
  */
-public class TemplateConfigurable extends JBPanel implements Configurable{
+public class TemplateConfigurable extends JBPanel implements Configurable, AppendNode {
 
     private final static Logger logger = LoggerFactory.getLogger(TemplateConfigurable.class);
     @Getter
@@ -59,6 +61,7 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
     @Getter
     private DataCenter dataCenter;
     private ITabbedPane jPanel;
+    private DirConfigPane dirConfigPane;
 
     @Override
     public @NlsContexts.ConfigurableName String getDisplayName() {
@@ -89,13 +92,11 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
         CodeGroup group = CodeGroupDao.getGroup();
         if (group != null) {
             groupByFile.add(group);
-            saveData2Tree(groupByFile, templateTree);
+            saveData2Tree(groupByFile);
         }
         TemplateAddAction action = new TemplateAddAction(this);
         ItemDeleteAction itemDeleteAction = new ItemDeleteAction(this);
         Map<String, RenderCode> renderCodes = createRenderCode();
-        templateEditor = new TemplateEditor();
-        templateEditor.setRenderActionMap(renderCodes);
         toolbarDecorator = ToolbarDecorator.createDecorator(templateTree)
                 .setAddAction(action)
                 .setRemoveAction(itemDeleteAction)
@@ -107,7 +108,6 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
         templateTree.addTreeSelectionListener(this::valueChanged);
 
         //设置group配置面版
-        groupConfigPane = new GroupConfigPane();
         JPanel templatesPanel = toolbarDecorator.createPanel();
 //        templatesPanel.setPreferredSize(JBUI.size(240,100));
         jSplitPane = new JSplitPane();
@@ -117,8 +117,14 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
         templatesPanel.setMinimumSize(new Dimension(240, 300));
         jSplitPane.setTopComponent(templatesPanel);
         // 配置面板右侧
+        templateEditor = new TemplateEditor();
+        templateEditor.setRenderActionMap(renderCodes);
+        dirConfigPane = new DirConfigPane();
+        groupConfigPane = new GroupConfigPane();
+        groupConfigPane.setRenderCodeMap(renderCodes);
         jPanel = new ITabbedPane();
         jPanel.add("code group", groupConfigPane);
+        jPanel.add("code dir", dirConfigPane);
         jPanel.add("code template", templateEditor);
         jPanel.setVisible(true);
         jSplitPane.setBottomComponent(jPanel);
@@ -139,7 +145,7 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
         return renderActionMap;
     }
 
-    private void saveData2Tree(List<CodeGroup> groupByFile, Tree templateTree) {
+    public  void saveData2Tree(List<CodeGroup> groupByFile) {
         if (CollectionUtils.isEmpty(groupByFile)) {
             return;
         }
@@ -210,6 +216,15 @@ public class TemplateConfigurable extends JBPanel implements Configurable{
         } else if (object instanceof CodeGroup) {
             jPanel.setVisible(true);
             jPanel.setSelectedComponent(groupConfigPane);
+        }  else if (object instanceof CodeDir) {
+            jPanel.setVisible(true);
+            CodeGroup codeGroup = this.codeGroups.get(this.codeGroups.indexOf(userObjectPath[1]));
+            List<CodeDir> dirs = codeGroup.getDirs();
+            if (CollectionUtils.isNotEmpty(dirs)) {
+                CodeDir codeDir = dirs.get(dirs.indexOf(userObjectPath[2]));
+                dirConfigPane.setCurrDir(codeDir);
+            }
+            jPanel.setSelectedComponent(dirConfigPane);
         } else {
             jPanel.setVisible(false);
         }
