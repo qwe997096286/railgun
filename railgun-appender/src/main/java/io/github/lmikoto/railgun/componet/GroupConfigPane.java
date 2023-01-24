@@ -1,26 +1,33 @@
 package io.github.lmikoto.railgun.componet;
 
+import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
+import com.intellij.openapi.vfs.LocalFileSystem;
+import com.intellij.openapi.vfs.StandardFileSystems;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.JBSplitter;
 import com.intellij.vcsUtil.VcsUtil;
 import io.github.lmikoto.railgun.dao.DataCenter;
-import io.github.lmikoto.railgun.dto.CodeRenderTabDto;
-import io.github.lmikoto.railgun.entity.*;
+import io.github.lmikoto.railgun.dao.FileDao;
+import io.github.lmikoto.railgun.entity.CodeDir;
+import io.github.lmikoto.railgun.entity.ConfigModel;
+import io.github.lmikoto.railgun.entity.SimpleClass;
+import io.github.lmikoto.railgun.entity.SimpleField;
 import io.github.lmikoto.railgun.entity.dict.TemplateDict;
 import io.github.lmikoto.railgun.service.RenderCode;
-import io.github.lmikoto.railgun.service.impl.RenderVm2file;
-import io.github.lmikoto.railgun.utils.Appender;
-import io.github.lmikoto.railgun.utils.CollectionUtils;
-import io.github.lmikoto.railgun.utils.NotificationUtils;
+import io.github.lmikoto.railgun.utils.*;
 import lombok.Setter;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
@@ -28,16 +35,22 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.io.File;
+import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
-import java.util.*;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
  * @author jinwq
  * @Date 2022/12/12 14:32
  */
+@Slf4j
 public class GroupConfigPane extends JScrollPane implements ActionListener, ComponentListener {
     private final Appender appender;
+    private PlaceholderTextField comp;
     private JPanel contentPanel;
     private JComboBox<Integer> extraBtnCnt;
     private JCheckBox exportCheckBox;
@@ -59,9 +72,12 @@ public class GroupConfigPane extends JScrollPane implements ActionListener, Comp
     private JButton entityDirBtn;
     private JTextField dtoDir;
     private JButton dtoDirBtn;
+    private JPanel authorPane;
+    private JCheckBox powerCheckBox;
     @Setter
     private Map<String, RenderCode> renderCodeMap;
     private List<? extends LocalChangeList> changeLists;
+    private AppenderUtils appenderUtils;
 
     public GroupConfigPane() {
         super();
@@ -72,6 +88,9 @@ public class GroupConfigPane extends JScrollPane implements ActionListener, Comp
         extraBtnCnt.addItem(3);
         extraBtnCnt.addItem(4);
         extraBtnCnt.addItem(5);
+        this.comp = new PlaceholderTextField();
+        this.comp.setPlaceholder("请输入作者");
+        authorPane.add(comp);
         renderBtn.addActionListener(this);
         confBtn.addActionListener(this);
         saveFileDirBtn.addActionListener(this);
@@ -82,6 +101,10 @@ public class GroupConfigPane extends JScrollPane implements ActionListener, Comp
         if (configModel == null) {
             return;
         }
+        setConfig(configModel);
+    }
+
+    public void setConfig(ConfigModel configModel) {
         exportCheckBox.setSelected(configModel.isHasExport());
         importCheckBox.setSelected(configModel.isHasImport());
         pagingCheckBox.setSelected(configModel.isHasPaging());
@@ -90,10 +113,12 @@ public class GroupConfigPane extends JScrollPane implements ActionListener, Comp
         createCheckBox.setSelected(configModel.isHasCreate());
         delCheckBox.setSelected(configModel.isHasDel());
         delBatchCheckBox.setSelected(configModel.isHasDelBatch());
+        powerCheckBox.setSelected(configModel.isHasDelBatch());
         groupDir.setText(configModel.getGroupDir());
         saveFileDir.setText(configModel.getSaveFileDir());
         entityDir.setText(configModel.getEntityDir());
         dtoDir.setText(configModel.getDtoDir());
+        this.comp.setText(configModel.getAuthor());
         DataCenter.getCurrentGroup().getVelocityContext().put("config", configModel);
     }
 
@@ -111,10 +136,12 @@ public class GroupConfigPane extends JScrollPane implements ActionListener, Comp
                 configModel.setHasCreate(createCheckBox.isSelected());
                 configModel.setHasDel(delCheckBox.isSelected());
                 configModel.setHasDelBatch(delBatchCheckBox.isSelected());
+                configModel.setHasPower(powerCheckBox.isSelected());
                 configModel.setGroupDir(groupDir.getText());
                 configModel.setSaveFileDir(saveFileDir.getText());
                 configModel.setEntityDir(entityDir.getText());
                 configModel.setDtoDir(dtoDir.getText());
+                configModel.setAuthor(comp.getText());
                 DataCenter.getCurrentGroup().getVelocityContext().put("config", configModel);
             }
         } else if (source.equals(this.renderBtn)) {
@@ -138,7 +165,7 @@ public class GroupConfigPane extends JScrollPane implements ActionListener, Comp
         openDialog.setVisible(true);
         String directory = openDialog.getFile();
         if (StringUtils.isNotEmpty(directory)) {
-            textField.setText(openDialog.getDirectory() + directory + "/");
+            textField.setText(openDialog.getDirectory() + directory + File.separator);
         }
         openDialog.dispose();
         dialog.dispose();
@@ -150,111 +177,110 @@ public class GroupConfigPane extends JScrollPane implements ActionListener, Comp
         if (!codeDirs.isPresent()) {
             return;
         }
-        if (!Optional.ofNullable(DataCenter.getCurrentGroup()).map(CodeGroup::getVelocityContext).map(map ->
-                map.get("po")).isPresent()) {
-            NotificationUtils.simpleNotify("未添加类配置");
-            return;
-        }
-        List<CodeTemplate> templates = codeDirs.get().stream().filter(dir -> CollectionUtils.isNotEmpty(dir.getTemplates()))
-                .filter(CodeDir::getEnable).peek(dir -> {
-                    List<CodeTemplate> dirTemplates = dir.getTemplates();
-                    if (CollectionUtils.isNotEmpty(dirTemplates)) {
-                        dirTemplates.forEach(temple -> {
-                            temple.setDir(dir.getName());
-                        });
-                    }
-                })
-                .flatMap(dir -> dir.getTemplates().stream()).collect(Collectors.toList());
-        List<CodeTemplate> vmTemplate = templates.stream().filter(template -> TemplateDict.VM2FILE.equals(template.getType()))
-                .collect(Collectors.toList());
-        if (CollectionUtils.isEmpty(vmTemplate)) {
-            NotificationUtils.simpleNotify("未启用任何vm模版");
-            return;
-        }
-        RenderCode renderCode = this.renderCodeMap.get(TemplateDict.VM2FILE);
+        List<CodeDir> dirs = codeDirs.get().stream().filter(dir -> CollectionUtils.isNotEmpty(dir.getTemplates()))
+                .filter(CodeDir::getEnable).collect(Collectors.toList());
+
+        List<Change> changes = appenderUtils.renderShowCode(dirs, temp -> TemplateDict.VM2FILE.equals(temp.getType()));
         @NotNull Project @NotNull [] project = ProjectManager.getInstance().getOpenProjects();
         LocalChangeListImpl.Builder guide = new LocalChangeListImpl.Builder(project[0], "guide");
-        List<Change> changes = Lists.newArrayListWithExpectedSize(vmTemplate.size());
-        changes.addAll(populateEntity());
-        for (CodeTemplate codeTemplate : vmTemplate) {
-            if (renderCode instanceof RenderVm2file) {
-                ((RenderVm2file) renderCode).setTemplate(codeTemplate);
-            }
-            List<CodeRenderTabDto> tabDtoList = renderCode.execute(codeTemplate.getContent());
-            if (CollectionUtils.isEmpty(tabDtoList)) {
-                continue;
-            }
-            CodeRenderTabDto codeRenderTabDto = tabDtoList.get(0);
-            FilePath filePath = VcsUtil.getFilePath(codeTemplate.getDir() + "/" + codeRenderTabDto.getTabName());
-            SimpleContentRevision simpleContentRevision = new SimpleContentRevision(codeRenderTabDto.getTabContent(), filePath,
-                    VcsRevisionNumber.NULL.asString());
-            ContentRevision currentRevision = CurrentContentRevision.create(filePath);
-            Change change = null;
-            if (filePath.getIOFile().exists()) {
-                change = new Change(simpleContentRevision, currentRevision);
-            } else {
-                change = new Change(null, simpleContentRevision);
-            }
-            changes.add(new ChangeListChange(change, "guide", "guide"));
-        }
-        LocalChangeListImpl changeList = guide.setChanges(changes).setId("guide").build();
+        List<Change> objChanges = populateEntity();
+        objChanges.addAll(changes);
+        LocalChangeListImpl changeList = guide.setChanges(objChanges).setId("guide").build();
         changeLists = Collections.singletonList(changeList);
         IChangesBrowser localChangesBrowser = new IChangesBrowser(project[0], changeLists);
         localChangesBrowser.setIncludedChanges(changes);
         localChangesBrowser.selectEntries(changeLists);
         localChangesBrowser.setVisible(true);
-        this.add(localChangesBrowser);
         localChangesBrowser.showDiff();
     }
 
     @SneakyThrows
-    private Collection<? extends Change> populateEntity() {
+    private List<Change> populateEntity() {
         List<Change> changeList = Lists.newArrayListWithExpectedSize(3);
         Map<String, Object> velocityContext = DataCenter.getCurrentGroup().getVelocityContext();
         SimpleClass po = (SimpleClass) velocityContext.get("po");
         SimpleClass dto = (SimpleClass) velocityContext.get("dto");
-        SimpleClass pk = (SimpleClass) velocityContext.get("pk");
+        JavaConvertUtils.populateImport(dto);
+        JavaConvertUtils.populatePageConst(dto);
+        SimpleField pk = (SimpleField) velocityContext.get("pk") ;
         ConfigModel configModel = DataCenter.getConfigModel();
         if (configModel == null || StringUtils.isEmpty(configModel.getEntityDir())
                 || StringUtils.isEmpty(configModel.getDtoDir())) {
             NotificationUtils.simpleNotify("请选配置entity、dto的包路径");
             throw new RuntimeException("请选配置entity、dto的包路径");
         }
-        FilePath filePath = VcsUtil.getFilePath(configModel.getEntityDir() + "/" + po.getSimpleName());
+        if (po == null) {
+            NotificationUtils.simpleNotify("请选生成类配置");
+            return Collections.emptyList();
+        }
+        FilePath filePath = VcsUtil.getFilePath(configModel.getEntityDir() + File.separator + po.getSimpleName() + ".java");
         SimpleContentRevision simpleContentRevision = new SimpleContentRevision(appender.process(po, null), filePath,
                 VcsRevisionNumber.NULL.asString());
         ContentRevision currentRevision;
-        if (!filePath.getIOFile().exists()) {
-            filePath.getIOFile().createNewFile();
-        }
         currentRevision = CurrentContentRevision.create(filePath);
         Change change;
         if (filePath.getIOFile().exists()) {
             change = new Change(simpleContentRevision, currentRevision);
         } else {
-            change = new Change(null, simpleContentRevision);
+            FileDao.saveFile(filePath.getIOFile(), simpleContentRevision.getContent());
+            @Nullable VirtualFile fileDirPath = VcsUtil.getFilePath(configModel.getEntityDir()).getVirtualFile();
+            try {
+                if (!fileDirPath.exists()) {
+                    NotificationUtils.simpleNotify("未找到指定目录");
+                }
+                FileDocumentManager.getInstance().reloadFiles(StandardFileSystems.local().findFileByPath(
+                        fileDirPath.findOrCreateChildData(LocalFileSystem.getInstance(), po.getSimpleName() + ".java")
+                                .getPath()));
+            } catch (IOException e) {
+                log.error(Throwables.getStackTraceAsString(e));
+            }
+            change = new Change(null, currentRevision);
         }
         changeList.add(change);
         if (pk != null) {
-            filePath = VcsUtil.getFilePath(configModel.getEntityDir() + "/" + pk.getSimpleName());
-            simpleContentRevision = new SimpleContentRevision(appender.process(pk, null), filePath,
+            filePath = VcsUtil.getFilePath(configModel.getEntityDir() + File.separator + pk.getClazz().getSimpleName() + ".java");
+            simpleContentRevision = new SimpleContentRevision(appender.process(pk.getClazz(), null), filePath,
                     VcsRevisionNumber.NULL.asString());
             currentRevision = CurrentContentRevision.create(filePath);
             if (filePath.getIOFile().exists()) {
                 change = new Change(simpleContentRevision, currentRevision);
             } else {
-                change = new Change(null, simpleContentRevision);
+                FileDao.saveFile(filePath.getIOFile(), simpleContentRevision.getContent());
+                @Nullable VirtualFile fileDirPath = VcsUtil.getFilePath(configModel.getEntityDir()).getVirtualFile();
+                try {
+                    if (!fileDirPath.exists()) {
+                        NotificationUtils.simpleNotify("未找到指定目录");
+                    }
+                    FileDocumentManager.getInstance().reloadFiles(StandardFileSystems.local().findFileByPath(
+                            fileDirPath.findOrCreateChildData(LocalFileSystem.getInstance(), pk.getSimpleName()
+                                            + ".java").getPath()));
+                } catch (IOException e) {
+                    log.error(Throwables.getStackTraceAsString(e));
+                }
+                change = new Change(null, currentRevision);
             }
             changeList.add(change);
         }
-        filePath = VcsUtil.getFilePath(configModel.getDtoDir() + "/" + dto.getSimpleName());
+        filePath = VcsUtil.getFilePath(configModel.getDtoDir() + File.separator + dto.getSimpleName() + ".java");
         simpleContentRevision = new SimpleContentRevision(appender.process(dto, null), filePath,
                 VcsRevisionNumber.NULL.asString());
         currentRevision = CurrentContentRevision.create(filePath);
         if (filePath.getIOFile().exists()) {
             change = new Change(simpleContentRevision, currentRevision);
         } else {
-            change = new Change(null, simpleContentRevision);
+            FileDao.saveFile(filePath.getIOFile(), simpleContentRevision.getContent());
+            @Nullable VirtualFile fileDirPath = VcsUtil.getFilePath(configModel.getDtoDir()).getVirtualFile();
+            try {
+                if (!fileDirPath.exists()) {
+                    NotificationUtils.simpleNotify("未找到指定目录");
+                }
+                FileDocumentManager.getInstance().reloadFiles(StandardFileSystems.local().findFileByPath(
+                        fileDirPath.findOrCreateChildData(LocalFileSystem.getInstance(), dto.getSimpleName()
+                                        + ".java").getPath()));
+            } catch (IOException e) {
+                log.error(Throwables.getStackTraceAsString(e));
+            }
+            change = new Change(null, currentRevision);
         }
         changeList.add(change);
         return changeList;
@@ -280,5 +306,13 @@ public class GroupConfigPane extends JScrollPane implements ActionListener, Comp
     @Override
     public void componentHidden(ComponentEvent e) {
 
+    }
+
+    public void setAppenderUtils(AppenderUtils appenderUtils) {
+        this.appenderUtils = appenderUtils;
+    }
+
+    public AppenderUtils getAppenderUtils() {
+        return appenderUtils;
     }
 }

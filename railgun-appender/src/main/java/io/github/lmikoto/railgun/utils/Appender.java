@@ -7,16 +7,15 @@ import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import io.github.lmikoto.railgun.entity.SimpleAnnotation;
-import io.github.lmikoto.railgun.entity.SimpleClass;
-import io.github.lmikoto.railgun.entity.SimpleField;
-import io.github.lmikoto.railgun.entity.SimpleMethod;
+import io.github.lmikoto.railgun.dao.DataCenter;
+import io.github.lmikoto.railgun.entity.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -48,10 +47,28 @@ public class Appender {
 
         buildFiled(type,model.getFields(), model.getImports());
 
+        buildConstructor(type,model.getConstructorList(),model.getImports());
+
         buildMethod(type,model.getMethods(),model.getImports());
 
         buildImport(unit,model.getImports());
         return unit.toString();
+    }
+
+    private void buildConstructor(TypeDeclaration<?> type, List<ConstructorDeclaration> constructorList, Set<String> imports) {
+        Set<Integer> consCnt = type.getConstructors().stream().map(construct -> construct.getParameters().size())
+                .collect(Collectors.toSet());
+        if (CollectionUtils.isEmpty(constructorList)) {
+            return;
+        }
+        constructorList.forEach(construct -> {
+            int size = construct.getParameters().size();
+            if (!consCnt.contains(size)) {
+                type.addMember(construct);
+            } else {
+                NotificationUtils.simpleNotify("已存在" + size + "个参数的构造函数");
+            }
+        });
     }
 
     private void buildFiled(TypeDeclaration<?> type, LinkedHashMap<String, SimpleField> fields, Set<String> imports) {
@@ -82,6 +99,9 @@ public class Appender {
                         " = " + fieldData.getExpr());
             } else {
                 fieldDeclaration = declaration.addField(filedType.getSimpleName(), entry.getKey());
+            }
+            if (filedType.getName() != null && filedType.getName().indexOf('.') != -1) {
+                imports.add(filedType.getName());
             }
             NodeList<AnnotationExpr> annoNodes = new NodeList<>();
             if (CollectionUtils.isNotEmpty(simpleAnnotations)) {
@@ -153,6 +173,9 @@ public class Appender {
                     List<SimpleField> params = m.getParams();
                     for (SimpleField param: params){
                         methodDeclaration.addParameter(param.getClazz().getSimpleName(), param.getName());
+                        if (param.getClazz().getName() != null && param.getClazz().getName().indexOf('.') != -1) {
+                            imports.add(param.getClazz().getName());
+                        }
                     }
                 }
 
@@ -163,6 +186,7 @@ public class Appender {
                             continue;
                         }
                         AnnotationExpr annotationExpr = StaticJavaParser.parseAnnotation(simpleAnnotation.getExpr());
+                        imports.add(simpleAnnotation.getName());
                         methodDeclaration.addAnnotation(annotationExpr);
                     }
                 }
@@ -267,9 +291,16 @@ public class Appender {
     private void buildClass(TypeDeclaration<?> type, SimpleClass model) {
         if(Objects.isNull(type.getName()) || "empty".equals(type.getNameAsString())){
             type.setName(JavaUtils.getSimpleName(model.getName()));
+            String comment = "";
             if (StringUtils.isNotEmpty(model.getComment())) {
-                type.setBlockComment("*" + model.getComment());
+                comment = "*\n* " + model.getComment() + "\n";
             }
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+            ConfigModel configModel = DataCenter.getConfigModel();
+
+            comment += "* @author " + configModel.getAuthor() + "\n"
+                    + "* @date " + sdf.format(new Date()) + '\n';
+            type.setBlockComment(comment);
             type.setModifiers(Modifier.Keyword.PUBLIC);
         }
     }

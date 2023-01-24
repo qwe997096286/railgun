@@ -65,18 +65,21 @@ public class RenderVm2file implements RenderCode, SetCurTemplate
         //设置velocity资源加载方式为file时的处理类
         velocityEngine.setProperty("file.resource.loader.class","org.apache.velocity.runtime.resource.loader.FileResourceLoader");
         String absolutePath = file.getAbsolutePath();
-        velocityEngine.setProperty("file.resource.loader.path", absolutePath.substring(0, absolutePath.lastIndexOf('/')));
-        velocityEngine.setProperty("input.encoding", "UTF-8");
+        velocityEngine.setProperty("file.resource.loader.path", absolutePath.substring(0, absolutePath.lastIndexOf(File.separator)));
         velocityEngine.setProperty("output.encoding", "UTF-8");
+        velocityEngine.setProperty("input.encoding", "UTF-8");
         velocityEngine.init();
         StringWriter sw = new StringWriter();
-        Template template = velocityEngine.getTemplate(curTemplate.getName(), "UTF-8");
         Map<String, Object> velocityContext = DataCenter.getCurrentGroup().getVelocityContext();
+        Template template = velocityEngine.getTemplate(curTemplate.getName(), "UTF-8");
+        velocityContext.put("config", DataCenter.getConfigModel());
         template.merge(new VelocityContext(velocityContext), sw);
         StringBuffer buffer = sw.getBuffer();
         String name = curTemplate.getName();
-        if (velocityContext.containsKey("po")) {
-            SimpleClass po = (SimpleClass) velocityContext.get("po");
+        SimpleClass po = (SimpleClass) velocityContext.get("po");
+        if (name.contains("${po.lowCamelPOName}")) {
+            name = name.replace("${po.lowCamelPOName}", po.getLowCamelPOName());
+        } else if (po != null && name.endsWith(".java")) {
             name = po.getUpCamelPOName() + StringUtils.camelToCamel(name, true);
         }
         CodeRenderTabDto tabDto = new CodeRenderTabDto();

@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.comment.Comment;
+import net.sf.jsqlparser.statement.create.index.CreateIndex;
 import net.sf.jsqlparser.statement.create.table.ColDataType;
 import net.sf.jsqlparser.statement.create.table.CreateTable;
 import net.sf.jsqlparser.statement.create.table.Index;
@@ -44,33 +45,13 @@ public class DefaultParser extends AbstractParser {
             if (createTables.isEmpty()) {
                 throw new RuntimeException("Only support create table statement !!!");
             }
-            Map<String, String> fullName2Comment = statements.stream().filter(statement -> statement
-                    instanceof Comment).map(statement -> (Comment) statement).collect(Collectors
-                    .toMap((Comment comment) -> {
-                if (Objects.nonNull(comment.getTable())) {
-                    return removeQuotes(comment.getTable().getFullyQualifiedName().toUpperCase());
-                } else if (Objects.nonNull(comment.getColumn())) {
-                    return removeQuotes(comment.getColumn().getFullyQualifiedName().toUpperCase());
-                } else if (Objects.nonNull(comment.getView())) {
-                    return removeQuotes(comment.getView().getFullyQualifiedName().toUpperCase());
-                }
-                return null;
-            }, comment -> removeQuotes(comment.getComment().toString())));
+            Map<String, String> fullName2Comment = getCommentMap(statements);
+            Map<String, String> uniqueFieldMap = getUniqueMap(statements);
             for(CreateTable createTable: createTables) {
                 List<Field> fields = new ArrayList<>();
                 Table table = new Table(fields);
                 net.sf.jsqlparser.schema.Table tableScheme = createTable.getTable();
                 table.setName(removeQuotes(tableScheme.getName()));
-                List<Index> indexes = createTable.getIndexes();
-                Map<String, Object> primaryKeyMap = Maps.newHashMap();
-                if (CollectionUtils.isNotEmpty(indexes)) {
-                    for (Index index : indexes) {
-                        if ("PRIMARY KEY".equals(index.getType())) {
-                            index.getColumns().forEach(columnParams -> primaryKeyMap.put(removeQuotes(columnParams.columnName),
-                                    columnParams));
-                        }
-                    }
-                }
                 String tableFullName;
                 if (fullName2Comment == null || fullName2Comment.isEmpty() ) {
                     List<String> strList = createTable.getTableOptionsStrings();
@@ -80,10 +61,26 @@ public class DefaultParser extends AbstractParser {
                             break;
                         }
                     }
-                    tableFullName = null;
+                    tableFullName = removeQuotes(createTable.getTable().getFullyQualifiedName().toUpperCase());
                 } else {
                     tableFullName = removeQuotes(createTable.getTable().getFullyQualifiedName().toUpperCase());
                     table.setTable(removeQuotes(fullName2Comment.get(tableFullName)));
+                }
+                List<Index> indexes = createTable.getIndexes();
+                Map<String, Object> primaryKeyMap = Maps.newHashMap();
+                if (CollectionUtils.isNotEmpty(indexes)) {
+                    for (Index index : indexes) {
+                        if ("PRIMARY KEY".equals(index.getType())) {
+                            index.getColumns().forEach(columnParams -> primaryKeyMap.put(removeQuotes(columnParams.columnName),
+                                    columnParams));
+                        } else if ("UNIQUE KEY".equals(index.getType())) {
+                            List<Index.ColumnParams> columns = index.getColumns();
+                            if (columns.size() == 1) {
+                                columns.forEach(columnParams -> uniqueFieldMap.put(tableFullName+ "." + removeQuotes(columnParams.columnName).toUpperCase(),
+                                "UNIQUE"));
+                            }
+                        }
+                    }
                 }
                 createTable.getColumnDefinitions().forEach(it -> {
                     Field field = new Field();
@@ -102,6 +99,11 @@ public class DefaultParser extends AbstractParser {
                         field.setComment(fullName2Comment.get(tableFullName + "." + removeQuotes(it.getColumnName().toUpperCase())));
                     } else {
                         field.setComment(getColumnComment(it.getColumnSpecs()));
+                    }
+                    if (StringUtils.isNotEmpty(tableFullName) && uniqueFieldMap.containsKey(tableFullName + "." + removeQuotes(it.getColumnName().toUpperCase()))) {
+                        field.setUnique(true);
+                    } else {
+                        field.setUnique(false);
                     }
                     // 主键
                     if (primaryKeyMap.containsKey(columnName)) {
@@ -131,6 +133,42 @@ public class DefaultParser extends AbstractParser {
             log.error(Throwables.getStackTraceAsString(ignore));
         }
         return null;
+    }
+
+    private Map<String, String> getUniqueMap(List<Statement> statements) {
+        Map<String, String> fullName2Index = statements.stream().filter(statement -> statement
+                instanceof CreateIndex).map(statement -> (CreateIndex) statement).collect(Collectors
+                .toMap((CreateIndex index) -> {
+
+                    if (Objects.nonNull(index.getTable())) {
+                        List<String> columnsNames = index.getIndex().getColumnsNames();
+                        if (CollectionUtils.isEmpty(columnsNames)) {
+                            return null;
+                        } else if (columnsNames.size() > 1) {
+                            return null;
+                        }
+                        return removeQuotes(index.getTable().getFullyQualifiedName().toUpperCase()) +
+                                "." + columnsNames.get(0).toUpperCase();
+                    }
+                    return null;
+                }, index -> removeQuotes("UNIQUE"), (left, right) -> left));
+        return fullName2Index;
+    }
+
+    private Map<String, String> getCommentMap(List<Statement> statements) {
+        Map<String, String> fullName2Comment = statements.stream().filter(statement -> statement
+                instanceof Comment).map(statement -> (Comment) statement).collect(Collectors
+                .toMap((Comment comment) -> {
+            if (Objects.nonNull(comment.getTable())) {
+                return removeQuotes(comment.getTable().getFullyQualifiedName().toUpperCase());
+            } else if (Objects.nonNull(comment.getColumn())) {
+                return removeQuotes(comment.getColumn().getFullyQualifiedName().toUpperCase());
+            } else if (Objects.nonNull(comment.getView())) {
+                return removeQuotes(comment.getView().getFullyQualifiedName().toUpperCase());
+            }
+            return null;
+        }, comment -> removeQuotes(comment.getComment().toString())));
+        return fullName2Comment;
     }
 
     /**

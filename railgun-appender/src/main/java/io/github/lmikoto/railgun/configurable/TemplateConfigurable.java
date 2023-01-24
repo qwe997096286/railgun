@@ -28,6 +28,7 @@ import io.github.lmikoto.railgun.service.impl.RenderEntity2Select;
 import io.github.lmikoto.railgun.service.impl.RenderSql2Class;
 import io.github.lmikoto.railgun.service.impl.RenderSql2Config;
 import io.github.lmikoto.railgun.service.impl.RenderVm2file;
+import io.github.lmikoto.railgun.utils.AppenderUtils;
 import io.github.lmikoto.railgun.utils.CollectionUtils;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
@@ -82,6 +83,8 @@ public class TemplateConfigurable extends JBPanel implements Configurable, Appen
         // init template tree
         templateTree = new Tree();
 //        templateTree.putClientProperty("JTree.lineStyle", "Horizontal");
+        dataCenter = new DataCenter();
+        dataCenter.setGroupList(null);
         templateTree.setRootVisible(false);
         templateTree.setShowsRootHandles(true);
         templateTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
@@ -103,7 +106,7 @@ public class TemplateConfigurable extends JBPanel implements Configurable, Appen
                 .setEditAction(new SaveGroupAction(this));
 //                .setRemoveAction(new TemplateRemoveAction(this))
 //                .setEditAction(new TemplateEditAction(this));
-        dataCenter = new DataCenter();
+        dataCenter.setGroupList(codeGroups);
         dataCenter.setCodeGroup(group);
         templateTree.addTreeSelectionListener(this::valueChanged);
 
@@ -117,10 +120,14 @@ public class TemplateConfigurable extends JBPanel implements Configurable, Appen
         templatesPanel.setMinimumSize(new Dimension(240, 300));
         jSplitPane.setTopComponent(templatesPanel);
         // 配置面板右侧
+        AppenderUtils appenderUtils = new AppenderUtils();
+        appenderUtils.setRenderCodeMap(renderCodes);
         templateEditor = new TemplateEditor();
         templateEditor.setRenderActionMap(renderCodes);
+        templateEditor.setAppenderUtils(appenderUtils);
         dirConfigPane = new DirConfigPane();
         groupConfigPane = new GroupConfigPane();
+        groupConfigPane.setAppenderUtils(appenderUtils);
         groupConfigPane.setRenderCodeMap(renderCodes);
         jPanel = new ITabbedPane();
         jPanel.add("code group", groupConfigPane);
@@ -194,6 +201,9 @@ public class TemplateConfigurable extends JBPanel implements Configurable, Appen
         }
         Object object = node.getUserObject();
         Object[] userObjectPath = node.getUserObjectPath();
+        if (object == null || userObjectPath == null || userObjectPath.length < 2) {
+            return;
+        }
         if (!DataCenter.getCurrentGroup().equals(userObjectPath[1])) {
             this.dataCenter.setCodeGroup(codeGroups.get(codeGroups.indexOf(userObjectPath[1])));
         }
@@ -215,6 +225,8 @@ public class TemplateConfigurable extends JBPanel implements Configurable, Appen
             jPanel.setSelectedComponent(templateEditor);
         } else if (object instanceof CodeGroup) {
             jPanel.setVisible(true);
+            CodeGroup codeGroup = this.codeGroups.get(this.codeGroups.indexOf(userObjectPath[1]));
+            groupConfigPane.setConfig(codeGroup.getConfigModel());
             jPanel.setSelectedComponent(groupConfigPane);
         }  else if (object instanceof CodeDir) {
             jPanel.setVisible(true);
@@ -257,8 +269,8 @@ public class TemplateConfigurable extends JBPanel implements Configurable, Appen
                 tempCellRenderer.setClosedIcon(AllIcons.Nodes.Folder);
                 tempCellRenderer.setLeafIcon(AllIcons.Nodes.Folder);
                 CodeDir group = (CodeDir) obj;
-                String name = null;
-                if (DataCenter.getConfigModel() != null) {
+                String name = group.getName();
+                if (DataCenter.getConfigModel() != null && StringUtils.isNotEmpty(DataCenter.getConfigModel().getGroupDir())) {
                     name = group.getName().replaceFirst(DataCenter.getConfigModel().getGroupDir(), "");
                 }
                 return tempCellRenderer.getTreeCellRendererComponent(tree, name, selected, expanded, false, row, hasFocus);

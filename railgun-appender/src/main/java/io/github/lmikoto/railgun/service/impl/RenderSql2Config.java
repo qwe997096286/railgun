@@ -7,6 +7,7 @@ import io.github.lmikoto.railgun.dict.SimpleDict;
 import io.github.lmikoto.railgun.dto.CodeRenderTabDto;
 import io.github.lmikoto.railgun.entity.FieldsConfigModel;
 import io.github.lmikoto.railgun.entity.SimpleClass;
+import io.github.lmikoto.railgun.entity.SimpleField;
 import io.github.lmikoto.railgun.entity.dict.TemplateDict;
 import io.github.lmikoto.railgun.model.Table;
 import io.github.lmikoto.railgun.service.RenderCode;
@@ -98,7 +99,7 @@ public class RenderSql2Config implements RenderCode {
             dialog.setVisible(true);
             velocityContext.put("po", po);
             velocityContext.put("dto", dto);
-            if (Optional.ofNullable(po.getPk()).map(SimpleClass::getAnnotations).map(list -> list.stream().anyMatch(annotation ->
+            if (Optional.ofNullable(po.getPk()).map(SimpleField::getClazz).map(SimpleClass::getAnnotations).map(list -> list.stream().anyMatch(annotation ->
                     "@Embeddable".equals(annotation.getExpr()))).isPresent()) {
                 velocityContext.put("pk", po.getPk());
             }

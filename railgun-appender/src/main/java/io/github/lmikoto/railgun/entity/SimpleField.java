@@ -26,6 +26,7 @@ public class SimpleField implements SimpleName {
     private String comment;
 
     private String label;
+    private Integer length;
 
     public boolean hasLabel(String expect) {
         if (StringUtils.isEmpty(label)) {
@@ -41,5 +42,13 @@ public class SimpleField implements SimpleName {
             this.label += label + "&";
         }
         return true;
+    }
+
+    public void setLength(Integer length) {
+        this.length = length;
+    }
+
+    public Integer getLength() {
+        return length;
     }
 }

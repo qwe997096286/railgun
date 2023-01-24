@@ -13,6 +13,7 @@ public interface SimpleDict {
     String CREATE = "CREATE";
     String SHOW = "SHOW";
     String NOT_NULL = "NOT_NULL";
+    String UNIQUE = "UNIQUE";
     String CONTROLLER = "controller";
     String SERVICE = "service";
     String DAO = "dao";

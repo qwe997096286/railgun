@@ -9,6 +9,7 @@ public class NameEditDialog extends JDialog {
     private JPanel contentPane;
     @Getter
     private JButton buttonOK;
+    @Getter
     private JButton buttonCancel;
     private JLabel label;
     @Getter

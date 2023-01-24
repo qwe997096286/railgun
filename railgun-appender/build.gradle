@@ -7,7 +7,6 @@ buildPlugin {
 }
 
 repositories {
-    maven {url 'http://maven.aliyun.com/nexus/content/groups/public/'}
     mavenCentral()
 }
 dependencies {
@@ -16,7 +15,14 @@ dependencies {
 }
 
 intellij {
-    version '2020.2.2'
+    version '2021.2.3'
     sandboxDirectory = project.rootDir.canonicalPath + "/.sandbox"
+    intellij.updateSinceUntilBuild false
     plugins = ['java']
+}
+patchPluginXml {
+    changeNotes """
+      """
+    sinceBuild '201'
+    untilBuild '223.*'
 }

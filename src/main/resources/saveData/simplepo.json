@@ -1,0 +1,486 @@
+{
+  "imports" : [ ],
+  "name" : "me.zhengjie.modules.system.domain.BshStuBaseInfo",
+  "annotations" : [ {
+    "name" : "javax.persistence.Entity",
+    "expr" : "@Entity"
+  }, {
+    "name" : "javax.persistence.Table",
+    "expr" : "@Table(name = \"BSH_STU_BASE_INFO\")"
+  } ],
+  "extend" : null,
+  "impl" : [ {
+    "imports" : [ ],
+    "name" : "java.io.Serializable",
+    "annotations" : null,
+    "extend" : null,
+    "impl" : null,
+    "pk" : null,
+    "methods" : null,
+    "fields" : null,
+    "fieldsAnno" : null,
+    "modifiers" : null,
+    "comment" : null
+  } ],
+  "pk" : {
+    "name" : "pk",
+    "clazz" : {
+      "imports" : [ ],
+      "name" : "me.zhengjie.modules.system.domain.BshStuBaseInfoPK",
+      "annotations" : [ {
+        "name" : "javax.persistence.Embeddable",
+        "expr" : "@Embeddable"
+      } ],
+      "extend" : null,
+      "impl" : [ {
+        "imports" : [ ],
+        "name" : "java.io.Serializable",
+        "annotations" : null,
+        "extend" : null,
+        "impl" : null,
+        "pk" : null,
+        "methods" : null,
+        "fields" : null,
+        "fieldsAnno" : null,
+        "modifiers" : null,
+        "comment" : null
+      } ],
+      "pk" : null,
+      "methods" : null,
+      "fields" : {
+        "serialVersionUID" : {
+          "name" : "serialVersionUID",
+          "clazz" : {
+            "imports" : [ ],
+            "name" : "long",
+            "annotations" : null,
+            "extend" : null,
+            "impl" : null,
+            "pk" : null,
+            "methods" : null,
+            "fields" : null,
+            "fieldsAnno" : null,
+            "modifiers" : null,
+            "comment" : null
+          },
+          "modifiers" : [ "PRIVATE", "STATIC", "FINAL" ],
+          "annotations" : null,
+          "expr" : "-4651238582864674184L",
+          "comment" : null,
+          "label" : null
+        },
+        "stuid" : {
+          "name" : "stuid",
+          "clazz" : {
+            "imports" : [ ],
+            "name" : "String",
+            "annotations" : null,
+            "extend" : null,
+            "impl" : null,
+            "pk" : null,
+            "methods" : null,
+            "fields" : null,
+            "fieldsAnno" : null,
+            "modifiers" : null,
+            "comment" : null
+          },
+          "modifiers" : [ "PRIVATE" ],
+          "annotations" : [ {
+            "name" : "javax.persistence.Column",
+            "expr" : "@Column(name = \"stuid\",nullable = false)"
+          } ],
+          "expr" : null,
+          "comment" : "学号",
+          "label" : "PRIMARY KEY&NOT_NULL&"
+        },
+        "classno" : {
+          "name" : "classno",
+          "clazz" : {
+            "imports" : [ ],
+            "name" : "String",
+            "annotations" : null,
+            "extend" : null,
+            "impl" : null,
+            "pk" : null,
+            "methods" : null,
+            "fields" : null,
+            "fieldsAnno" : null,
+            "modifiers" : null,
+            "comment" : null
+          },
+          "modifiers" : [ "PRIVATE" ],
+          "annotations" : [ {
+            "name" : "javax.persistence.Column",
+            "expr" : "@Column(name = \"classno\",nullable = false)"
+          } ],
+          "expr" : null,
+          "comment" : "学生班级号",
+          "label" : "PRIMARY KEY&NOT_NULL&"
+        }
+      },
+      "fieldsAnno" : null,
+      "modifiers" : null,
+      "comment" : "学生信息表主键"
+    },
+    "modifiers" : [ "PRIVATE" ],
+    "annotations" : [ {
+      "name" : "javax.persistence.EmbeddedId",
+      "expr" : "@EmbeddedId"
+    } ],
+    "expr" : null,
+    "comment" : "学号,学生班级号",
+    "label" : null
+  },
+  "methods" : [ ],
+  "fields" : {
+    "serialVersionUID" : {
+      "name" : "serialVersionUID",
+      "clazz" : {
+        "imports" : [ ],
+        "name" : "long",
+        "annotations" : null,
+        "extend" : null,
+        "impl" : null,
+        "pk" : null,
+        "methods" : null,
+        "fields" : null,
+        "fieldsAnno" : null,
+        "modifiers" : null,
+        "comment" : null
+      },
+      "modifiers" : [ "PRIVATE", "STATIC", "FINAL" ],
+      "annotations" : null,
+      "expr" : "-7159597184440535722L",
+      "comment" : null,
+      "label" : null
+    },
+    "pk" : {
+      "name" : "pk",
+      "clazz" : {
+        "imports" : [ ],
+        "name" : "me.zhengjie.modules.system.domain.BshStuBaseInfoPK",
+        "annotations" : [ {
+          "name" : "javax.persistence.Embeddable",
+          "expr" : "@Embeddable"
+        } ],
+        "extend" : null,
+        "impl" : [ {
+          "imports" : [ ],
+          "name" : "java.io.Serializable",
+          "annotations" : null,
+          "extend" : null,
+          "impl" : null,
+          "pk" : null,
+          "methods" : null,
+          "fields" : null,
+          "fieldsAnno" : null,
+          "modifiers" : null,
+          "comment" : null
+        } ],
+        "pk" : null,
+        "methods" : null,
+        "fields" : {
+          "serialVersionUID" : {
+            "name" : "serialVersionUID",
+            "clazz" : {
+              "imports" : [ ],
+              "name" : "long",
+              "annotations" : null,
+              "extend" : null,
+              "impl" : null,
+              "pk" : null,
+              "methods" : null,
+              "fields" : null,
+              "fieldsAnno" : null,
+              "modifiers" : null,
+              "comment" : null
+            },
+            "modifiers" : [ "PRIVATE", "STATIC", "FINAL" ],
+            "annotations" : null,
+            "expr" : "-4651238582864674184L",
+            "comment" : null,
+            "label" : null
+          },
+          "stuid" : {
+            "name" : "stuid",
+            "clazz" : {
+              "imports" : [ ],
+              "name" : "String",
+              "annotations" : null,
+              "extend" : null,
+              "impl" : null,
+              "pk" : null,
+              "methods" : null,
+              "fields" : null,
+              "fieldsAnno" : null,
+              "modifiers" : null,
+              "comment" : null
+            },
+            "modifiers" : [ "PRIVATE" ],
+            "annotations" : [ {
+              "name" : "javax.persistence.Column",
+              "expr" : "@Column(name = \"stuid\",nullable = false)"
+            } ],
+            "expr" : null,
+            "comment" : "学号",
+            "label" : "PRIMARY KEY&NOT_NULL&"
+          },
+          "classno" : {
+            "name" : "classno",
+            "clazz" : {
+              "imports" : [ ],
+              "name" : "String",
+              "annotations" : null,
+              "extend" : null,
+              "impl" : null,
+              "pk" : null,
+              "methods" : null,
+              "fields" : null,
+              "fieldsAnno" : null,
+              "modifiers" : null,
+              "comment" : null
+            },
+            "modifiers" : [ "PRIVATE" ],
+            "annotations" : [ {
+              "name" : "javax.persistence.Column",
+              "expr" : "@Column(name = \"classno\",nullable = false)"
+            } ],
+            "expr" : null,
+            "comment" : "学生班级号",
+            "label" : "PRIMARY KEY&NOT_NULL&"
+          }
+        },
+        "fieldsAnno" : null,
+        "modifiers" : null,
+        "comment" : "学生信息表主键"
+      },
+      "modifiers" : [ "PRIVATE" ],
+      "annotations" : [ {
+        "name" : "javax.persistence.EmbeddedId",
+        "expr" : "@EmbeddedId"
+      } ],
+      "expr" : null,
+      "comment" : "学号,学生班级号",
+      "label" : null
+    },
+    "stuid" : {
+      "name" : "stuid",
+      "clazz" : {
+        "imports" : [ ],
+        "name" : "String",
+        "annotations" : null,
+        "extend" : null,
+        "impl" : null,
+        "pk" : null,
+        "methods" : null,
+        "fields" : null,
+        "fieldsAnno" : null,
+        "modifiers" : null,
+        "comment" : null
+      },
+      "modifiers" : [ "PRIVATE" ],
+      "annotations" : [ {
+        "name" : "javax.persistence.Column",
+        "expr" : "@Column(name = \"stuid\", insertable = false, updatable = false)"
+      } ],
+      "expr" : null,
+      "comment" : "学号",
+      "label" : "PRIMARY KEY&NOT_NULL&"
+    },
+    "stuname" : {
+      "name" : "stuname",
+      "clazz" : {
+        "imports" : [ ],
+        "name" : "String",
+        "annotations" : null,
+        "extend" : null,
+        "impl" : null,
+        "pk" : null,
+        "methods" : null,
+        "fields" : null,
+        "fieldsAnno" : null,
+        "modifiers" : null,
+        "comment" : null
+      },
+      "modifiers" : [ "PRIVATE" ],
+      "annotations" : [ {
+        "name" : "javax.persistence.Column",
+        "expr" : "@Column(name = \"stuname\", nullable = false)"
+      } ],
+      "expr" : null,
+      "comment" : "学生姓名",
+      "label" : "NOT_NULL&"
+    },
+    "sex" : {
+      "name" : "sex",
+      "clazz" : {
+        "imports" : [ ],
+        "name" : "String",
+        "annotations" : null,
+        "extend" : null,
+        "impl" : null,
+        "pk" : null,
+        "methods" : null,
+        "fields" : null,
+        "fieldsAnno" : null,
+        "modifiers" : null,
+        "comment" : null
+      },
+      "modifiers" : [ "PRIVATE" ],
+      "annotations" : [ {
+        "name" : "javax.persistence.Column",
+        "expr" : "@Column(name = \"sex\", nullable = false)"
+      } ],
+      "expr" : null,
+      "comment" : "学生性别",
+      "label" : "NOT_NULL&"
+    },
+    "age" : {
+      "name" : "age",
+      "clazz" : {
+        "imports" : [ ],
+        "name" : "java.math.BigDecimal",
+        "annotations" : null,
+        "extend" : null,
+        "impl" : null,
+        "pk" : null,
+        "methods" : null,
+        "fields" : null,
+        "fieldsAnno" : null,
+        "modifiers" : null,
+        "comment" : null
+      },
+      "modifiers" : [ "PRIVATE" ],
+      "annotations" : [ {
+        "name" : "javax.persistence.Column",
+        "expr" : "@Column(name = \"age\", nullable = false)"
+      } ],
+      "expr" : null,
+      "comment" : "学生年龄",
+      "label" : "NOT_NULL&"
+    },
+    "classno" : {
+      "name" : "classno",
+      "clazz" : {
+        "imports" : [ ],
+        "name" : "String",
+        "annotations" : null,
+        "extend" : null,
+        "impl" : null,
+        "pk" : null,
+        "methods" : null,
+        "fields" : null,
+        "fieldsAnno" : null,
+        "modifiers" : null,
+        "comment" : null
+      },
+      "modifiers" : [ "PRIVATE" ],
+      "annotations" : [ {
+        "name" : "javax.persistence.Column",
+        "expr" : "@Column(name = \"classno\", insertable = false, updatable = false)"
+      } ],
+      "expr" : null,
+      "comment" : "学生班级号",
+      "label" : "PRIMARY KEY&NOT_NULL&"
+    },
+    "stuaddress" : {
+      "name" : "stuaddress",
+      "clazz" : {
+        "imports" : [ ],
+        "name" : "String",
+        "annotations" : null,
+        "extend" : null,
+        "impl" : null,
+        "pk" : null,
+        "methods" : null,
+        "fields" : null,
+        "fieldsAnno" : null,
+        "modifiers" : null,
+        "comment" : null
+      },
+      "modifiers" : [ "PRIVATE" ],
+      "annotations" : [ {
+        "name" : "javax.persistence.Column",
+        "expr" : "@Column(name = \"stuaddress\")"
+      } ],
+      "expr" : null,
+      "comment" : "学生住址",
+      "label" : null
+    },
+    "grade" : {
+      "name" : "grade",
+      "clazz" : {
+        "imports" : [ ],
+        "name" : "String",
+        "annotations" : null,
+        "extend" : null,
+        "impl" : null,
+        "pk" : null,
+        "methods" : null,
+        "fields" : null,
+        "fieldsAnno" : null,
+        "modifiers" : null,
+        "comment" : null
+      },
+      "modifiers" : [ "PRIVATE" ],
+      "annotations" : [ {
+        "name" : "javax.persistence.Column",
+        "expr" : "@Column(name = \"grade\", nullable = false)"
+      } ],
+      "expr" : null,
+      "comment" : "年级",
+      "label" : "NOT_NULL&"
+    },
+    "enroldate" : {
+      "name" : "enroldate",
+      "clazz" : {
+        "imports" : [ ],
+        "name" : "java.util.Date",
+        "annotations" : null,
+        "extend" : null,
+        "impl" : null,
+        "pk" : null,
+        "methods" : null,
+        "fields" : null,
+        "fieldsAnno" : null,
+        "modifiers" : null,
+        "comment" : null
+      },
+      "modifiers" : [ "PRIVATE" ],
+      "annotations" : [ {
+        "name" : "javax.persistence.Column",
+        "expr" : "@Column(name = \"enroldate\")"
+      } ],
+      "expr" : null,
+      "comment" : "入学时间",
+      "label" : null
+    },
+    "idnumber" : {
+      "name" : "idnumber",
+      "clazz" : {
+        "imports" : [ ],
+        "name" : "String",
+        "annotations" : null,
+        "extend" : null,
+        "impl" : null,
+        "pk" : null,
+        "methods" : null,
+        "fields" : null,
+        "fieldsAnno" : null,
+        "modifiers" : null,
+        "comment" : null
+      },
+      "modifiers" : [ "PRIVATE" ],
+      "annotations" : [ {
+        "name" : "javax.persistence.Column",
+        "expr" : "@Column(name = \"idnumber\", nullable = false)"
+      } ],
+      "expr" : null,
+      "comment" : "身份证号",
+      "label" : "NOT_NULL&UNIQUE&"
+    }
+  },
+  "fieldsAnno" : null,
+  "modifiers" : null,
+  "comment" : "学生信息表"
+}

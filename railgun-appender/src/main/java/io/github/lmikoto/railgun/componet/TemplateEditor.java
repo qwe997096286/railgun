@@ -1,8 +1,11 @@
 package io.github.lmikoto.railgun.componet;
 
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.vcs.changes.Change;
+import com.intellij.openapi.vcs.changes.LocalChangeListImpl;
 import com.intellij.ui.JBSplitter;
 import io.github.lmikoto.railgun.dao.DataCenter;
-import io.github.lmikoto.railgun.dao.FileDao;
 import io.github.lmikoto.railgun.dto.CodeRenderTabDto;
 import io.github.lmikoto.railgun.entity.CodeDir;
 import io.github.lmikoto.railgun.entity.CodeGroup;
@@ -10,17 +13,18 @@ import io.github.lmikoto.railgun.entity.CodeTemplate;
 import io.github.lmikoto.railgun.entity.SetCurTemplate;
 import io.github.lmikoto.railgun.entity.dict.TemplateDict;
 import io.github.lmikoto.railgun.service.RenderCode;
-import io.github.lmikoto.railgun.service.impl.RenderVm2file;
+import io.github.lmikoto.railgun.utils.AppenderUtils;
 import io.github.lmikoto.railgun.utils.CollectionUtils;
 import io.github.lmikoto.railgun.utils.NotificationUtils;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.File;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -41,6 +45,8 @@ public class TemplateEditor extends JPanel implements ComponentListener {
     private JButton preview;
     private Map<String, RenderCode> renderActionMap;
     private CodeTemplate currentTemplate;
+    private AppenderUtils appenderUtils;
+
     public TemplateEditor() {
 
         setLayout(new BorderLayout());
@@ -72,24 +78,26 @@ public class TemplateEditor extends JPanel implements ComponentListener {
         });
         this.generate.addActionListener(actionEvent -> {
             String text = textArea.getText();
-            RenderCode renderCode = renderActionMap.get(comboBox1.getSelectedItem());
-            if (renderCode instanceof SetCurTemplate) {
-                ((SetCurTemplate) renderCode).setTemplate(this.currentTemplate);
-            }
-            if (!Optional.ofNullable(DataCenter.getCurrentGroup()).map(CodeGroup::getVelocityContext).map(map ->
-                    map.get("po")).isPresent() && renderCode instanceof RenderVm2file) {
-                NotificationUtils.simpleNotify("未添加类配置");
-                return;
-            }
-            List<CodeRenderTabDto> tabDtos = renderCode.execute(text);
+            currentTemplate.setContent(text);
+
             Optional<List<CodeDir>> codeDirs = Optional.ofNullable(DataCenter.getCurrentGroup()).map(CodeGroup::getDirs);
             if (codeDirs.isPresent() && !codeDirs.get().isEmpty()) {
                 for (CodeDir codeDir : codeDirs.get()) {
                     if (CollectionUtils.isNotEmpty(codeDir.getTemplates()) && codeDir.getTemplates()
-                            .contains(currentTemplate)) {
-                        for (CodeRenderTabDto dto : tabDtos) {
-                            FileDao.saveFile(new File(codeDir.getName() + "/" + dto.getTabName()), dto.getTabContent());
+                            .stream().anyMatch(temp -> temp == currentTemplate)) {
+                        List<Change> changeList = appenderUtils.renderShowCode(Collections.singletonList(codeDir), temp ->
+                                temp == currentTemplate);
+                        if (CollectionUtils.isEmpty(changeList)) {
+                            break;
                         }
+                        @NotNull Project @NotNull [] project = ProjectManager.getInstance().getOpenProjects();
+                        LocalChangeListImpl.Builder guide = new LocalChangeListImpl.Builder(project[0], "guide");
+                        LocalChangeListImpl changeListImpl = guide.setChanges(changeList).setId("guide").build();
+                        List<LocalChangeListImpl> changeLists = Collections.singletonList(changeListImpl);
+                        IChangesBrowser localChangesBrowser = new IChangesBrowser(project[0], changeLists);
+                        localChangesBrowser.setVisible(true);
+                        localChangesBrowser.showDiff();
+                        break;
                     }
                 }
             }
@@ -165,5 +173,13 @@ public class TemplateEditor extends JPanel implements ComponentListener {
     @Override
     public void componentHidden(ComponentEvent e) {
 
+    }
+
+    public void setAppenderUtils(AppenderUtils appenderUtils) {
+        this.appenderUtils = appenderUtils;
+    }
+
+    public AppenderUtils getAppenderUtils() {
+        return appenderUtils;
     }
 }

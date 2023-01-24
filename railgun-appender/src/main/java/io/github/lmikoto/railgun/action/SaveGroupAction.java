@@ -22,6 +22,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * @author jinwq
@@ -55,16 +56,23 @@ public class SaveGroupAction extends BaseTemplateAction implements AnActionButto
         }
         List<AnAction> actionList = Lists.newArrayList();
         if (userObject instanceof CodeGroup) {
-            actionList.add(new SaveMenuItem(this.getGroupList().get(this.getGroupList().indexOf(userObject))));
+            int index = this.getGroupList().indexOf(userObject);
+            if (index != -1) {
+                actionList.add(new SaveMenuItem(this.getGroupList().get(index)));
+            }
         }
-        actionList.add(new ImportCodeGroup());
+        actionList.add(new SaveFirstGroup((obj) -> this.saveTree()));
+        actionList.add(new ImportCodeGroup(this.getGroupList()));
         return actionList;
     }
 
 
     class ImportCodeGroup extends AnAction implements DumbAware {
-        public ImportCodeGroup() {
+        private final List<CodeGroup> groupList;
+
+        public ImportCodeGroup(List<CodeGroup> groupList) {
             super("import");
+            this.groupList = groupList;
         }
 
         @Override
@@ -78,8 +86,13 @@ public class SaveGroupAction extends BaseTemplateAction implements AnActionButto
             if (JFileChooser.APPROVE_OPTION == result) {
                 String directory = fileChoose.getSelectedFile().getPath();
                 CodeGroup group = CodeGroupDao.getGroup(directory);
+                if (null == group) {
+                    NotificationUtils.simpleNotify("group导入失败");
+                    return;
+                }
                 appendNode.saveData2Tree(Collections.singletonList(group));
-                NotificationUtils.simpleNotify("当前选择的group已保存成功");
+                groupList.add(group);
+                NotificationUtils.simpleNotify("当前选择的group已导入成功");
             }
             jDialog.dispose();
         }
@@ -111,6 +124,21 @@ public class SaveGroupAction extends BaseTemplateAction implements AnActionButto
             }
             jDialog.dispose();
 
+        }
+    }
+    class SaveFirstGroup extends AnAction implements DumbAware {
+
+        private final Consumer consumer;
+
+        public SaveFirstGroup(Consumer consumer) {
+            super("save first group");
+            this.consumer = consumer;
+        }
+
+        @Override
+        public void actionPerformed(@NotNull AnActionEvent e) {
+            consumer.accept(e);
+            NotificationUtils.simpleNotify("save first group success");
         }
     }
 }

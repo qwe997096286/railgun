@@ -49,9 +49,9 @@ public class RenderSql2Class implements RenderCode {
             String doc = generateDoc(table);
             tabDtos.add(new CodeRenderTabDto(po.getSimpleName() + ".java", poClass));
             tabDtos.add(new CodeRenderTabDto(dto.getSimpleName() + ".java", dtoClass));
-            if (Optional.ofNullable(po.getPk()).map(SimpleClass::getAnnotations).map(list -> list.stream().anyMatch(annotation ->
+            if (Optional.ofNullable(po.getPk()).map(SimpleField::getClazz).map(SimpleClass::getAnnotations).map(list -> list.stream().anyMatch(annotation ->
                     "@Embeddable".equals(annotation.getExpr()))).isPresent()) {
-                String pkClass = appender.process(po.getPk(), null);
+                String pkClass = appender.process(po.getPk().getClazz(), null);
                 tabDtos.add(new CodeRenderTabDto(po.getPk().getSimpleName() + ".java", pkClass));
             }
             tabDtos.add(new CodeRenderTabDto(table.getTable() + ".md", doc));

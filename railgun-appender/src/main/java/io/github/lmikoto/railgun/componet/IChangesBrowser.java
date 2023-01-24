@@ -7,14 +7,12 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.ListSelection;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
-import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.registry.Registry;
 import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangeListChange;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
 import com.intellij.openapi.vcs.changes.ui.*;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.containers.ContainerUtil;
 import io.github.lmikoto.railgun.utils.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
@@ -54,13 +52,7 @@ public class IChangesBrowser extends ChangesBrowserBase implements Disposable {
 
     @Override
     public void dispose() {
-        LocalChangeList next = changeLists.iterator().next();
-        next.getChanges().forEach(change -> {
-            VirtualFile virtualFile = change.getVirtualFile();
-            if (virtualFile.exists()) {
-                FileEditorManager.getInstance(myProject).closeFile(virtualFile);
-            }
-        });
+        System.out.println("11111");
     }
 
     @NotNull
@@ -115,7 +107,20 @@ public class IChangesBrowser extends ChangesBrowserBase implements Disposable {
                         FileDocumentManager.getInstance().saveAllDocuments();
                         super.windowClosing(e);
                     }
+
+                    @Override
+                    public void windowClosed(WindowEvent e) {
+                        FileDocumentManager.getInstance().saveAllDocuments();
+                        super.windowClosed(e);
+                    }
+
+                    @Override
+                    public void windowLostFocus(WindowEvent e) {
+                        FileDocumentManager.getInstance().saveAllDocuments();
+                        super.windowLostFocus(e);
+                    }
                 }));
+
 
         DiffManager.getInstance().showDiff(myProject, chain, hints);
     }

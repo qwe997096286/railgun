@@ -1,12 +1,14 @@
 package io.github.lmikoto.railgun.dao;
 
 import com.google.common.base.Throwables;
+import io.github.lmikoto.railgun.componet.NameEditDialog;
 import io.github.lmikoto.railgun.entity.CodeDir;
 import io.github.lmikoto.railgun.entity.CodeGroup;
 import io.github.lmikoto.railgun.entity.CodeTemplate;
 import io.github.lmikoto.railgun.entity.ConfigModel;
 import io.github.lmikoto.railgun.utils.CollectionUtils;
 import io.github.lmikoto.railgun.utils.JsonUtils;
+import io.github.lmikoto.railgun.utils.NotificationUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 
@@ -28,7 +30,7 @@ public class CodeGroupDao {
     private static int READING_SIZE = 1024;
 
     public static CodeGroup getGroup() {
-        return getGroup("./saveData/auto_data.text");
+        return getGroup("." + File.separator + "saveData" + File.separator + "auto_data.text");
     }
     public static CodeGroup getGroup(String dirStr) {
         File dataFile = new File(dirStr);
@@ -51,7 +53,9 @@ public class CodeGroupDao {
                 log.error("读取json文件失败" + Throwables.getStackTraceAsString(e));
             }
 
-
+            if (StringUtils.isEmpty(json)) {
+                return null;
+            }
             CodeGroup jsonObj = JsonUtils.fromJson(json, new JsonUtils.TypeReference<CodeGroup>() {
             });
             List<CodeDir> dirs = jsonObj.getDirs();
@@ -69,9 +73,9 @@ public class CodeGroupDao {
                         String saveDir = Optional.ofNullable(jsonObj.getConfigModel()).map(ConfigModel::
                                 getSaveFileDir).orElse("./");
                         if (StringUtils.isNotEmpty(template.getDir())) {
-                            path = saveDir + template.getDir() + "/";
+                            path = saveDir + template.getDir() + File.separator;
                         } else {
-                            path = saveDir + "saveData/";
+                            path = saveDir + "saveData" + File.separator;
                         }
                         File file = new File(path + template.getName());
                         StringBuffer fileContent = null;
@@ -91,6 +95,36 @@ public class CodeGroupDao {
 
                         template.setContent(fileContent.toString());
                     });
+                }
+            }
+            if (DataCenter.getGroupList() == null) {
+                return jsonObj;
+            }
+            while (DataCenter.getGroupList().contains(jsonObj) && !"Canceled".equals(jsonObj.getName())) {
+                NameEditDialog dialog = new NameEditDialog();
+                dialog.setTitle("Create Group");
+                dialog.getNameField().setText(jsonObj.getName());
+                dialog.getButtonOK().addActionListener(e -> {
+                    String name = dialog.getNameField().getText();
+                    if (StringUtils.isBlank(name)) {
+                        NotificationUtils.simpleNotify("Group can't be empty");
+                        return;
+                    }
+                    jsonObj.setName(name);
+                    dialog.setVisible(false);
+                });
+                dialog.getButtonCancel().addActionListener(e -> {
+                    NotificationUtils.simpleNotify("already exist group，can not create.");
+                    jsonObj.setName("Canceled");
+                });
+                dialog.setSize(300, 150);
+                dialog.setVisible(true);
+                while (dialog.isVisible() && !"Canceled".equals(jsonObj.getName())) {
+                    Thread.sleep(1000);
+                }
+                if ("Canceled".equals(jsonObj.getName())) {
+                    NotificationUtils.simpleNotify("import canceled");
+                    throw new RuntimeException("import canceled ");
                 }
             }
             return jsonObj;

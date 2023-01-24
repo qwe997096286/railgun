@@ -2,6 +2,9 @@ package io.github.lmikoto.railgun.action;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
+import com.intellij.openapi.application.Application;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.util.Computable;
 import com.intellij.ui.treeStructure.Tree;
 import io.github.lmikoto.railgun.configurable.TemplateConfigurable;
 import io.github.lmikoto.railgun.dao.DataCenter;
@@ -19,16 +22,11 @@ import org.apache.commons.lang.StringUtils;
 import javax.swing.*;
 import javax.swing.tree.*;
 import java.awt.*;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -44,7 +42,8 @@ public abstract class BaseTemplateAction {
     @Setter
     @Getter
     private java.util.List<CodeGroup> groupList;
-    public BaseTemplateAction(TemplateConfigurable configurable){
+
+    public BaseTemplateAction(TemplateConfigurable configurable) {
         templateTree = configurable.getTemplateTree();
         groupList = configurable.getCodeGroups();
     }
@@ -63,7 +62,7 @@ public abstract class BaseTemplateAction {
         dialog.setVisible(true);
     }
 
-    private void addNode(DefaultMutableTreeNode pNode, MutableTreeNode newNode){
+    private void addNode(DefaultMutableTreeNode pNode, MutableTreeNode newNode) {
         pNode.add(newNode);
         DefaultTreeModel model = (DefaultTreeModel) this.templateTree.getModel();
         TreeNode[] nodes = model.getPathToRoot(newNode);
@@ -71,7 +70,8 @@ public abstract class BaseTemplateAction {
         this.templateTree.scrollPathToVisible(path);
         this.templateTree.updateUI();
     }
-    protected void updateUI(){
+
+    protected void updateUI() {
         this.templateTree.updateUI();
     }
 
@@ -96,8 +96,9 @@ public abstract class BaseTemplateAction {
             dirs = Lists.newArrayList();
             codeGroup.setDirs(dirs);
         }
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddhhmmssZ");
-        dir.setRegTime(sdf.format(new Date()));
+        Random random = new Random();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddhhmmss");
+        dir.setRegTime(sdf.format(new Date()) + random.nextInt(999));
         dirs.add(dir);
         addNode(selectPath, new DefaultMutableTreeNode(dir));
         if (userObjectPath[1].equals(groupList.get(0))) {
@@ -126,7 +127,7 @@ public abstract class BaseTemplateAction {
         if (!(node.getParent() instanceof DefaultMutableTreeNode)) {
             return;
         }
-        DefaultMutableTreeNode parent =(DefaultMutableTreeNode) node.getParent();
+        DefaultMutableTreeNode parent = (DefaultMutableTreeNode) node.getParent();
         Object userObject = node.getUserObject();
         Object[] userObjectPath = node.getUserObjectPath();
         if (userObject instanceof CodeGroup) {
@@ -137,7 +138,7 @@ public abstract class BaseTemplateAction {
             CodeGroup codeGroup = groupList.get(groupList.indexOf(userObjectPath[1]));
             List<CodeDir> dirs = codeGroup.getDirs();
             dirs.remove(codeDir);
-        } else if (userObject instanceof CodeTemplate){
+        } else if (userObject instanceof CodeTemplate) {
             CodeTemplate template = (CodeTemplate) userObject;
             CodeGroup codeGroup = groupList.get(groupList.indexOf(userObjectPath[1]));
             List<CodeDir> dirs = codeGroup.getDirs();
@@ -147,84 +148,89 @@ public abstract class BaseTemplateAction {
         }
         parent.remove(node);
         updateUI();
-        if (userObjectPath[1].equals(groupList.get(0))) {
+        if (groupList.size() > 0 && userObjectPath[1].equals(groupList.get(0))) {
             saveTree();
         }
     }
 
 
     protected boolean saveTree() {
-        return saveTree("./saveData/auto_data.text", groupList.get(0));
+        return saveTree("." + File.separator + "saveData" + File.separator + "auto_data.text", groupList.get(0));
     }
+
     protected boolean saveTree(String dirStr, CodeGroup codeGroup) {
-        File dataFile = new File(dirStr);
-        FileWriter fileWriter = null;
-        try {
-            if (!dataFile.exists()) {
-                File dir = dataFile.getParentFile();
-                if (!dir.exists()) {
-                    dir.mkdir();
-                }
-                dataFile.createNewFile();
-            }
-            fileWriter = new FileWriter(dataFile);
-            List<CodeDir> dirs = codeGroup.getDirs();
-            if (CollectionUtils.isNotEmpty(dirs)) {
-                List<CodeTemplate> templates = dirs.stream().map(dir -> {
-                            List<CodeTemplate> setDirTemplate = dir.getTemplates();
-                            if (CollectionUtils.isNotEmpty(setDirTemplate)) {
-                                setDirTemplate.forEach( codeTemplate -> codeTemplate.setDir(dir.getRegTime()));
-                            }
-                            return setDirTemplate;
-                        }).filter(Objects::nonNull)
-                        .flatMap(List::stream).filter(template -> StringUtils.isNotBlank(template.getContent())).collect(Collectors.toList());
-                if (CollectionUtils.isNotEmpty(templates)) {
-                    templates.forEach(template -> {
-                        String path = null;
-                        ConfigModel configModel = DataCenter.getConfigModel();
-                        String saveDir = Optional.ofNullable(configModel).map(ConfigModel::getSaveFileDir).orElse("./");
-                        if (StringUtils.isNotEmpty(template.getDir())) {
-                            path = saveDir + template.getDir() + "/";
-                        } else {
-                            path = saveDir + "saveData/";
+        Application application = ApplicationManager.getApplication();
+        Computable<Boolean> computation = new Computable<Boolean>() {
+            @Override
+            public Boolean compute() {
+                File dataFile = new File(dirStr);
+                FileWriter fileWriter = null;
+                try {
+                    if (!dataFile.exists()) {
+                        File dir = dataFile.getParentFile();
+                        if (!dir.exists()) {
+                            dir.mkdir();
                         }
-                        File file = new File(path + template.getName());
-                        FileOutputStream fos = null;
-                        try {
-                            if (!file.exists()) {
-                                File dir = file.getParentFile();
-                                if (!dir.exists()) {
-                                    dir.mkdir();
+                        dataFile.createNewFile();
+                    }
+                    fileWriter = new FileWriter(dataFile);
+                    List<CodeDir> dirs = codeGroup.getDirs();
+                    if (CollectionUtils.isNotEmpty(dirs)) {
+                        List<CodeTemplate> templates = dirs.stream().map(dir -> {
+                                    List<CodeTemplate> setDirTemplate = dir.getTemplates();
+                                    if (CollectionUtils.isNotEmpty(setDirTemplate)) {
+                                        setDirTemplate.forEach(codeTemplate -> codeTemplate.setDir(dir.getRegTime()));
+                                    }
+                                    return setDirTemplate;
+                                }).filter(Objects::nonNull)
+                                .flatMap(List::stream).filter(template -> StringUtils.isNotBlank(template.getContent())).collect(Collectors.toList());
+                        if (CollectionUtils.isNotEmpty(templates)) {
+                            for (CodeTemplate template : templates) {
+                                String path = null;
+                                ConfigModel configModel = DataCenter.getConfigModel();
+                                String saveDir = Optional.ofNullable(configModel).map(ConfigModel::getSaveFileDir).orElse("./");
+                                if (StringUtils.isNotEmpty(template.getDir())) {
+                                    path = saveDir + template.getDir() + File.separator;
+                                } else {
+                                    path = saveDir + "saveData" + File.separator;
                                 }
-                                file.createNewFile();
-                            }
-                            fos = new FileOutputStream(file);
-                            fos.write(template.getContent().getBytes(StandardCharsets.UTF_8));
-                        } catch (IOException e) {
-                            log.error(Throwables.getStackTraceAsString(e));
-                        } finally {
-                            try {
+                                File file = new File(path + template.getName());
+                                FileOutputStream fos = null;
+                                if (!file.exists()) {
+                                    File dir = file.getParentFile();
+                                    if (!dir.exists()) {
+                                        dir.mkdir();
+                                    }
+                                    file.createNewFile();
+                                }
+                                fos = new FileOutputStream(file);
+                                fos.write(template.getContent().getBytes(StandardCharsets.UTF_8));
                                 fos.flush();
                                 fos.close();
-                            } catch (IOException e) {
-                                log.error(Throwables.getStackTraceAsString(e));
+
                             }
                         }
+                    }
+                    fileWriter.write(JsonUtils.toPrettyJson(codeGroup));
+                    return true;
+                } catch (FileNotFoundException e) {
+                    log.error(Throwables.getStackTraceAsString(e));
 
-                    });
+                } catch (IOException e) {
+                    log.error(Throwables.getStackTraceAsString(e));
+                } finally {
+                    try {
+                        fileWriter.flush();
+                        fileWriter.close();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
+                return false;
             }
-            fileWriter.write(JsonUtils.toPrettyJson(codeGroup));
-            return true;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } finally {
-            try {
-                fileWriter.flush();
-                fileWriter.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
+
+        };
+        application.runWriteAction(computation);
+        return computation.get();
     }
 }

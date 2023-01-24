@@ -1,6 +1,7 @@
 package io.github.lmikoto.railgun.dao;
 
 import com.google.common.base.Throwables;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.vcs.FilePath;
@@ -29,25 +30,31 @@ import java.util.List;
 public class FileDao {
     @SneakyThrows
     public static void saveFile(File file, String content) {
-        if (file.exists()) {
-            NotificationUtils.simpleNotify("文件已存在请自行将代码拷入");
-            showCompareBrowser(file, content);
-            return;
-        }
-        FileOutputStream fileOutputStream = null;
-        try {
-            file.createNewFile();
-            fileOutputStream = new FileOutputStream(file);
-            fileOutputStream.write(content.getBytes(StandardCharsets.UTF_8));
+        ApplicationManager.getApplication().runWriteAction(() -> {
+            if (file.exists()) {
+                NotificationUtils.simpleNotify("文件已存在请自行将代码拷入");
+                showCompareBrowser(file, content);
+                return;
+            }
+            FileOutputStream fileOutputStream = null;
+            try {
+                file.createNewFile();
+                fileOutputStream = new FileOutputStream(file);
+                fileOutputStream.write(content.getBytes(StandardCharsets.UTF_8));
 
-        } catch (FileNotFoundException e) {
-            log.error(Throwables.getStackTraceAsString(e));
-        } catch (IOException e) {
-            log.error(Throwables.getStackTraceAsString(e));
-        } finally {
-            fileOutputStream.flush();
-            fileOutputStream.close();
-        }
+            } catch (FileNotFoundException e) {
+                log.error(Throwables.getStackTraceAsString(e));
+            } catch (IOException e) {
+                log.error(Throwables.getStackTraceAsString(e));
+            } finally {
+                try {
+                    fileOutputStream.flush();
+                    fileOutputStream.close();
+                } catch (IOException e) {
+                    log.error(Throwables.getStackTraceAsString(e));
+                }
+            }
+        });
     }
 
     private static void showCompareBrowser(File file, String content) {
