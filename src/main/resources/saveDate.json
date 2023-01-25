@@ -1,0 +1,58 @@
+{
+  "name" : "io.github.noonrain",
+  "dirs" : [ {
+    "name" : "/Users/jinwq/study/layui/index",
+    "templates" : [ {
+      "name" : "sql2conf.conf",
+      "type" : "sql2config"
+    }, {
+      "name" : "get_simple_class.vm",
+      "type" : "vm2file"
+    }, {
+      "name" : "get_simple_class.js",
+      "type" : "vm2file"
+    }, {
+      "name" : "primary_key.conf",
+      "type" : "sql2config"
+    }, {
+      "name" : "controller.java",
+      "type" : "vm2file"
+    }, {
+      "name" : "sql2class",
+      "type" : "sql2class"
+    } ],
+    "regTime" : "202212280358614",
+    "enable" : false
+  }, {
+    "name" : "/Users/jinwq/study/eladmin/eladmin-system/src/main/java/me/zhengjie/modules/system/rest",
+    "templates" : [ {
+      "name" : "controller.java",
+      "type" : "vm2file"
+    } ],
+    "regTime" : "20221228035892",
+    "enable" : true
+  }, {
+    "name" : "/Users/jinwq/study/eladmin/eladmin-system/src/main/java/me/zhengjie/modules/system/repository",
+    "templates" : [ {
+      "name" : "repository.java",
+      "type" : "vm2file"
+    } ],
+    "regTime" : "2022122803581784",
+    "enable" : true
+  } ],
+  "configModel" : {
+    "packageName" : "me.zhengjie.modules.system",
+    "hasExport" : true,
+    "hasImport" : false,
+    "hasPaging" : false,
+    "hasApproval" : false,
+    "hasEdit" : true,
+    "hasCreate" : false,
+    "hasDelBatch" : false,
+    "hasDel" : false,
+    "groupDir" : "/Users/jinwq/study/eladmin/eladmin-system/src/main/java/me/zhengjie/modules/system/",
+    "saveFileDir" : "/Users/jinwq/study/railgun/src/main/resources/saveData/",
+    "entityDir" : "/Users/jinwq/study/eladmin/eladmin-system/src/main/java/me/zhengjie/modules/system/domain/",
+    "dtoDir" : "/Users/jinwq/study/eladmin/eladmin-system/src/main/java/me/zhengjie/modules/system/service/dto/"
+  }
+}

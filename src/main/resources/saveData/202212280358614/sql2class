@@ -1,0 +1,29 @@
+CREATE table "ZX_TABLE_COUNT"
+
+(
+
+"TABLE_NAME" varchar2(40 char) not null,
+
+"COUNT" varchar2(40 char) not null,
+
+"DESCRIPTION" varchar2(40 char) not null,
+
+"FLAG" varchar2(40 char) not null,
+
+"CREATE_DATE" varchar2(40 char) not null,
+constraint TABLE_COUNT_PK
+PRIMARY KEY ("TABLE_NAME","CREATE_DATE")
+
+);
+
+comment on table "ZX_TABLE_COUNT" is '每天产生的业务条数';
+
+comment on column "ZX_TABLE_COUNT"."TABLE_NAME" is '表名';
+
+comment on column "ZX_TABLE_COUNT"."COUNT" is '发生条数';
+
+comment on column "ZX_TABLE_COUNT"."DESCRIPTION" is '说明';
+
+comment on column "ZX_TABLE_COUNT"."FLAG" is '类型标记';
+
+comment on column "ZX_TABLE_COUNT"."CREATE_DATE" is '业务发生日期';
