@@ -43,7 +43,7 @@ public class ConfigModel {
             groupDir = groupDir.substring(0, groupDir.length() - 1);
         }
         String packageName = groupDir.substring(index + 11)
-                .replaceAll(File.separator, ".");
+                .replace(File.separator, ".");
         return packageName;
     }
 

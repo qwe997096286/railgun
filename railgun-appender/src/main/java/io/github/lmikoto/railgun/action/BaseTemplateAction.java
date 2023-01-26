@@ -41,7 +41,7 @@ public abstract class BaseTemplateAction {
 
     @Setter
     @Getter
-    private java.util.List<CodeGroup> groupList;
+    private List<CodeGroup> groupList;
 
     public BaseTemplateAction(TemplateConfigurable configurable) {
         templateTree = configurable.getTemplateTree();

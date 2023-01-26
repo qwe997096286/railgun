@@ -271,7 +271,7 @@ public class TemplateConfigurable extends JBPanel implements Configurable, Appen
                 CodeDir group = (CodeDir) obj;
                 String name = group.getName();
                 if (DataCenter.getConfigModel() != null && StringUtils.isNotEmpty(DataCenter.getConfigModel().getGroupDir())) {
-                    name = group.getName().replaceFirst(DataCenter.getConfigModel().getGroupDir(), "");
+                    name = group.getName().replace(DataCenter.getConfigModel().getGroupDir(), "");
                 }
                 return tempCellRenderer.getTreeCellRendererComponent(tree, name, selected, expanded, false, row, hasFocus);
             }

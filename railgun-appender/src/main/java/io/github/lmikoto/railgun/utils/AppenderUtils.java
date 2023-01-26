@@ -2,6 +2,7 @@ package io.github.lmikoto.railgun.utils;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.openapi.vcs.changes.*;
@@ -23,6 +24,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -82,7 +84,7 @@ public class AppenderUtils {
     private static void trans2Changes(List<Change> changes, CodeTemplate codeTemplate, List<CodeRenderTabDto> tabDtoList) {
         for (CodeRenderTabDto codeRenderTabDto : tabDtoList) {
 
-            FilePath filePath = VcsUtil.getFilePath(codeTemplate.getDir() + "/" + codeRenderTabDto.getTabName());
+            FilePath filePath = VcsUtil.getFilePath(codeTemplate.getDir() + File.separator + codeRenderTabDto.getTabName());
             SimpleContentRevision simpleContentRevision = new SimpleContentRevision(codeRenderTabDto.getTabContent(), filePath,
                     VcsRevisionNumber.NULL.asString());
             ContentRevision currentRevision = CurrentContentRevision.create(filePath);
@@ -92,17 +94,19 @@ public class AppenderUtils {
             } else {
                 FileDao.saveFile(filePath.getIOFile(), simpleContentRevision.getContent());
                 @Nullable VirtualFile fileDirPath = VcsUtil.getFilePath(codeTemplate.getDir()).getVirtualFile();
-                try {
-                    if (!fileDirPath.exists()) {
-                        NotificationUtils.simpleNotify("未找到指定目录");
-                        continue;
-                    }
-                    FileDocumentManager.getInstance().reloadFiles(StandardFileSystems.local().findFileByPath(
-                            fileDirPath.findOrCreateChildData(LocalFileSystem.getInstance(), codeRenderTabDto.getTabName())
-                            .getPath()));
-                } catch (IOException e) {
-                    log.error(Throwables.getStackTraceAsString(e));
+                if (!fileDirPath.exists()) {
+                    NotificationUtils.simpleNotify("未找到指定目录");
+                    continue;
                 }
+                ApplicationManager.getApplication().runWriteAction(() -> {
+                    try {
+                        FileDocumentManager.getInstance().reloadFiles(StandardFileSystems.local().findFileByPath(
+                                fileDirPath.findOrCreateChildData(LocalFileSystem.getInstance(), codeRenderTabDto.getTabName())
+                                        .getPath()));
+                    } catch (IOException e) {
+                        log.error(Throwables.getStackTraceAsString(e));
+                    }
+                });
                 change = new Change(null, currentRevision);
             }
             changes.add(new ChangeListChange(change, "guide", "guide"));

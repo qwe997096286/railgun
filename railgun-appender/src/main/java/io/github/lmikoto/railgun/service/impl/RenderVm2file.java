@@ -79,6 +79,8 @@ public class RenderVm2file implements RenderCode, SetCurTemplate
         SimpleClass po = (SimpleClass) velocityContext.get("po");
         if (name.contains("${po.lowCamelPOName}")) {
             name = name.replace("${po.lowCamelPOName}", po.getLowCamelPOName());
+        } else if (name.contains("${po.simpleName}")) {
+            name = name.replace("${po.simpleName}", po.getSimpleName());
         } else if (po != null && name.endsWith(".java")) {
             name = po.getUpCamelPOName() + StringUtils.camelToCamel(name, true);
         }

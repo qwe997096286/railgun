@@ -2,6 +2,7 @@ package io.github.lmikoto.railgun.componet;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
@@ -224,16 +225,18 @@ public class GroupConfigPane extends JScrollPane implements ActionListener, Comp
         } else {
             FileDao.saveFile(filePath.getIOFile(), simpleContentRevision.getContent());
             @Nullable VirtualFile fileDirPath = VcsUtil.getFilePath(configModel.getEntityDir()).getVirtualFile();
-            try {
                 if (!fileDirPath.exists()) {
                     NotificationUtils.simpleNotify("未找到指定目录");
                 }
-                FileDocumentManager.getInstance().reloadFiles(StandardFileSystems.local().findFileByPath(
-                        fileDirPath.findOrCreateChildData(LocalFileSystem.getInstance(), po.getSimpleName() + ".java")
-                                .getPath()));
-            } catch (IOException e) {
-                log.error(Throwables.getStackTraceAsString(e));
-            }
+            ApplicationManager.getApplication().runWriteAction(() -> {
+                try {
+                    FileDocumentManager.getInstance().reloadFiles(StandardFileSystems.local().findFileByPath(
+                            fileDirPath.findOrCreateChildData(LocalFileSystem.getInstance(), po.getSimpleName()
+                                    + ".java").getPath()));
+                } catch (IOException e) {
+                    log.error(Throwables.getStackTraceAsString(e));
+                }
+            });
             change = new Change(null, currentRevision);
         }
         changeList.add(change);
@@ -247,16 +250,18 @@ public class GroupConfigPane extends JScrollPane implements ActionListener, Comp
             } else {
                 FileDao.saveFile(filePath.getIOFile(), simpleContentRevision.getContent());
                 @Nullable VirtualFile fileDirPath = VcsUtil.getFilePath(configModel.getEntityDir()).getVirtualFile();
-                try {
-                    if (!fileDirPath.exists()) {
-                        NotificationUtils.simpleNotify("未找到指定目录");
-                    }
-                    FileDocumentManager.getInstance().reloadFiles(StandardFileSystems.local().findFileByPath(
-                            fileDirPath.findOrCreateChildData(LocalFileSystem.getInstance(), pk.getSimpleName()
-                                            + ".java").getPath()));
-                } catch (IOException e) {
-                    log.error(Throwables.getStackTraceAsString(e));
+                if (!fileDirPath.exists()) {
+                    NotificationUtils.simpleNotify("未找到指定目录");
                 }
+                ApplicationManager.getApplication().runWriteAction(() -> {
+                    try {
+                        FileDocumentManager.getInstance().reloadFiles(StandardFileSystems.local().findFileByPath(
+                                fileDirPath.findOrCreateChildData(LocalFileSystem.getInstance(), pk.getSimpleName()
+                                        + ".java").getPath()));
+                    } catch (IOException e) {
+                        log.error(Throwables.getStackTraceAsString(e));
+                    }
+                });
                 change = new Change(null, currentRevision);
             }
             changeList.add(change);
@@ -270,16 +275,18 @@ public class GroupConfigPane extends JScrollPane implements ActionListener, Comp
         } else {
             FileDao.saveFile(filePath.getIOFile(), simpleContentRevision.getContent());
             @Nullable VirtualFile fileDirPath = VcsUtil.getFilePath(configModel.getDtoDir()).getVirtualFile();
-            try {
                 if (!fileDirPath.exists()) {
                     NotificationUtils.simpleNotify("未找到指定目录");
                 }
-                FileDocumentManager.getInstance().reloadFiles(StandardFileSystems.local().findFileByPath(
-                        fileDirPath.findOrCreateChildData(LocalFileSystem.getInstance(), dto.getSimpleName()
+                ApplicationManager.getApplication().runWriteAction(() -> {
+                    try {
+                        FileDocumentManager.getInstance().reloadFiles(StandardFileSystems.local().findFileByPath(
+                                fileDirPath.findOrCreateChildData(LocalFileSystem.getInstance(), dto.getSimpleName()
                                         + ".java").getPath()));
-            } catch (IOException e) {
-                log.error(Throwables.getStackTraceAsString(e));
-            }
+                    } catch (IOException e) {
+                        log.error(Throwables.getStackTraceAsString(e));
+                    }
+                });
             change = new Change(null, currentRevision);
         }
         changeList.add(change);

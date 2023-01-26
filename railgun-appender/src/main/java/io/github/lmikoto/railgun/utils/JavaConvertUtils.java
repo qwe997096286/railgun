@@ -32,7 +32,7 @@ public class JavaConvertUtils {
         String dtoDir = Optional.ofNullable(DataCenter.getConfigModel()).map(ConfigModel::getDtoDir).orElse("");
         int beginIndex = dtoDir.indexOf("java" + File.separator) + 5;
         if (beginIndex >= 0 && beginIndex < dtoDir.length()) {
-            dtoDir = dtoDir.substring(beginIndex).replaceAll(File.separator, ".");
+            dtoDir = dtoDir.substring(beginIndex).replace(File.separator, ".");
         }
         simpleClass.setName(dtoDir + StringUtils.underlineToCamel(table.getName(),true) + "Dto");
         Random random = new Random();
@@ -87,9 +87,9 @@ public class JavaConvertUtils {
         String entityDir = Optional.ofNullable(DataCenter.getConfigModel()).map(ConfigModel::getEntityDir).orElse("");
         int beginIndex = entityDir.indexOf("java" + File.separator) + 5;
         if (beginIndex >= 0 && beginIndex < entityDir.length()) {
-            entityDir = entityDir.substring(beginIndex).replaceAll(File.separator, ".");
+            entityDir = entityDir.substring(beginIndex).replace(File.separator, ".");
         }
-         entityDir = entityDir.replaceAll(File.separator, ".");
+        entityDir = entityDir.replace(File.separator, ".");
         simpleClass.setName(entityDir + StringUtils.underlineToCamel(table.getName(),true));
         SimpleAnnotation tableAnno = new SimpleAnnotation();
         tableAnno.setExpr("@Table(name = \"" + table.getName().toUpperCase() + "\")");
